@@ -1,0 +1,14 @@
+EPOCHS	12						
+MAXRUNTIME	3600
+STIMULUSDATA	NULL											
+Stimulus.stimtype	circle	circle	circle	circle	circle	circle	circle	circle	circle	circle	circle	circle
+Stimulus.bg		0.09	0.099	0.1125	0.135	0.18	0.2025	0.225	0.27	0.315	0.36	0.45	0.54
+Stimulus.fg		0.09	0.12375	0.14062	0.16875	0.225	0.25312	0.28125	0.3375	0.3937	0.45	0.5625	0.675
+Stimulus.duration	10	6	6	6	6	6	6	6	6	6	6	6
+Stimulus.radius		20	20	20	20	20	20	20	20	20	20	20	20
+Stimulus.density	0	0	0	0	0	0	0	0	0	0	0	0
+Stimulus.tau		10	3	3	3	3	3	3	3	3	3	3	3	
+Stimulus.x_center	0	0	0	0	0	0	0	0	0	0	0	0	
+Stimulus.y_center	0	0	0	0	0	0	0	0	0	0	0	0
+Stimulus.pers.corr	0	0	0	0	0	0	0	0	0	0	0	0
+Stimulus.randomize	1	1	1	1	1	1	1	1	1	1	1	1
