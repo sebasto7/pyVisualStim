@@ -1,0 +1,17 @@
+EPOCHS  1
+MAXRUNTIME  3600
+STIMULUSDATA    		NULL
+Stimulus.stimtype   		stripe	
+Stimulus.intensity.mean    	0.5	
+Stimulus.contrast   		1	
+Stimulus.background.duration    1	
+Stimulus.bar.duration   	1	
+Stimulus.bar.width  		5	
+Stimulus.bar.height 		360	
+Stimulus.bar.orientation    	0	
+Stimulus.bar.xmin   		-100	
+Stimulus.bar.xmax   		100	
+Stimulus.bar.ymax   		100	
+Stimulus.bar.distance   	2.5	
+Stimulus.pers.corr		1	
+Stimulus.randomize  		0	

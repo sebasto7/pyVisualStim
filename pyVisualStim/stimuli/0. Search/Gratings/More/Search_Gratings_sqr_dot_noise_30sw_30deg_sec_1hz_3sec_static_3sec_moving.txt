@@ -1,0 +1,17 @@
+EPOCHS  8
+MAXRUNTIME  0
+STIMULUSDATA    		NULL
+Stimulus.stimtype		dottygrating 	dottygrating 	dottygrating 	dottygrating 	dottygrating 	dottygrating  	dottygrating 	dottygrating 	
+Stimulus.bg			0.5		0.5		0.5		0.5		0.5		0.5		0.5		0.5				
+Stimulus.fg			111		111		111		111		111		111		111		111		
+Stimulus.lum			1		1		1		1		1		1		1		1		
+Stimulus.michealson.contrast	1		1		1		1		1		1		1		1		
+Stimulus.sWavelength		30		30		30		30		30		30		30		30		
+Stimulus.velocity		30		30		30		30		30		30		30		30		
+Stimulus.nDots			1		2500		5000		7500		10000		12500		15000		17500		
+Stimulus.dotSize		5		5		5		5		5		5		5		5		
+Stimulus.dotSpeed		0		0		0		0		0		0		0		0		
+Stimulus.duration		6		6		6		6		6		6		6		6		
+Stimulus.tau			3		3		3		3		3		3		3		3		
+Stimulus.pers.corr		1		1		1		1		1		1		1		1		
+Stimulus.randomize  		2		2		2		2		2		2		2		2		
