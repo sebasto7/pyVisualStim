@@ -206,9 +206,6 @@ def main(path_stimfile):
 
                         
 
-
-                    
-
                 if stimdict["STIMULUSDATA"][11:16] == "NOISY":
                     _useNoise = True
                     # Adding noise using target SNR
@@ -265,6 +262,9 @@ def main(path_stimfile):
                     for e in range(stimdict["EPOCHS"]):
                         noise_array_ls.append(None)
             elif  stimdict["STIMULUSDATA"] == "TERNARY_TEXTURE":
+                stim_texture_ls = list()
+                noise_array_ls = list()
+                
                 choiseArr = [0,0.5,1]
                 z= 10000 # z- dimension (here frames presented over time)
                 if int(stimdict["texture.hor_size"][1]) == 1:
@@ -284,6 +284,10 @@ def main(path_stimfile):
                     y=int(stimdict["texture.vert_size"][1])
                     np.random.seed(config.SEED)
                     stim_texture= np.random.choice(choiseArr, size=(z,x,y))
+                
+                stim_texture_ls.append(stim_texture) 
+                noise_array_ls.append(None)
+                
             else:
                  stim_texture = h5py.File(stimdict["STIMULUSDATA"])
                  stim_texture= stim_texture['stimulus'][()]
