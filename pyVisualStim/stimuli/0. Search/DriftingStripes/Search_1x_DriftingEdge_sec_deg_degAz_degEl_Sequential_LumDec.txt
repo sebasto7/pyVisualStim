@@ -7,11 +7,11 @@ Stimulus.fg			0		0
 Stimulus.duration		4.8		4.8	
 Stimulus.velocity		20		20
 Stimulus.direction		1		-1
-Stimulus.bar.initPos		-60		-60
-Stimulus.bar.width  		5		5	
-Stimulus.bar.height 		5		5	
-Stimulus.bar.orientation    	0		0	
-Stimulus.bar.number		3		3
+Stimulus.bar.initPos		-30		-30
+Stimulus.bar.width  		20		20	
+Stimulus.bar.height 		20		20	
+Stimulus.bar.orientation    	0		90	
+Stimulus.bar.number		1		1
 Stimulus.bar.interSpace		10.5		10.5
 Stimulus.tau			0		0		
 Stimulus.pers.corr		1		1

@@ -256,15 +256,14 @@ def main(path_stimfile):
                         target_snr_db = 20* np.log10(signal_rms/noise_rms) # Wikipedia decibels definition
                         # print(f'SNR_dB {i}: {target_snr_db}')
                     
-
                 else:
                     noise_array_ls = list()
                     for e in range(stimdict["EPOCHS"]):
                         noise_array_ls.append(None)
+                        
             elif  stimdict["STIMULUSDATA"] == "TERNARY_TEXTURE":
                 stim_texture_ls = list()
                 noise_array_ls = list()
-                
                 choiseArr = [0,0.5,1]
                 z= 10000 # z- dimension (here frames presented over time)
                 if int(stimdict["texture.hor_size"][1]) == 1:
@@ -288,11 +287,22 @@ def main(path_stimfile):
                 stim_texture_ls.append(stim_texture) 
                 noise_array_ls.append(None)
                 
-            else:
+            elif  stimdict["STIMULUSDATA"] == "POLIGON":
+                stim_texture_ls = list()
+                noise_array_ls = list()
+                x=int(stimdict["texture.hor_size"][1])
+                y=int(stimdict["texture.vert_size"][1])
+                z= 10000 # z- dimension (here frames presented over time)
+                curr_arr = np.zeros(size=(z,x,y))
+                
+                
+                
+            else: # Specific case for older files (used in 2pstim-C- in which ["STIMULUSDATA"] was not specified
                  stim_texture = h5py.File(stimdict["STIMULUSDATA"])
                  stim_texture= stim_texture['stimulus'][()]
                  stim_texture= stim_texture[0:10000,:,:] # 10000 is a fix value
-    else:
+    
+    else: # When ["STIMULUSDATA"]is == "NULL"
         stim_texture_ls = list()
         noise_array_ls = list()
         for e in range(stimdict["EPOCHS"]):
@@ -306,6 +316,7 @@ def main(path_stimfile):
     for i,stimtype in enumerate(stimdict["stimtype"]):
         if stimdict["pers.corr"][i] == 1:
             _units = 'deg' # Keep in "deg" when using the warper.
+
         else:
             #'degFlatPos' is the correct unit for having a correct screen size 
             # in degrees when the perspective is not corrected by the warper.
@@ -490,12 +501,16 @@ def main(path_stimfile):
         
          # warp for perspective correction
         if stimdict["pers.corr"][epoch] == 1:
-            warper = Warper(win, warp='spherical',warpfile = "",
-                            warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
-                            flipHorizontal = False, flipVertical = False)
+            if _screen.OK: # Seb. now if and else do the same
+                warper = Warper(win, warp='spherical',warpfile = "",
+                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
+                                flipHorizontal = False, flipVertical = False)
+            else: # Seb added temporary
+                warper = Warper(win, warp='spherical',warpfile = "",
+                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
+                                flipHorizontal = False, flipVertical = False)
         else:
-            warper = Warper(win, warp= None)     
-                
+            warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])    # Seb recently added: eyepoint = [x_eyepoint,y_eyepoint] 
         # Reset epoch timer
         duration_clock = global_clock.getTime()  
         try:

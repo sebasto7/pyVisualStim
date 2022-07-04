@@ -1,0 +1,16 @@
+EPOCHS	9		
+MAXRUNTIME	0	
+STIMULUSDATA	NULL		
+Stimulus.stimtype		driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe
+Stimulus.bg		    	0.5		0.5		0.5		0.5		0.5		0.5		0.5		0.5		0.5				
+Stimulus.fg			0		0		0		0		0		0		0		0		0				
+Stimulus.duration		3		3		3		3		3		3		3		3		3				
+Stimulus.velocity		33		33		33		33		33		33		33		33		33				
+Stimulus.direction		1		1		1		1		1		1		1		1		1			
+Stimulus.bar.initPos		0		-5		-10		-15		-20		-25		-30		-40		-45					
+Stimulus.bar.width  		5		5		5		5		5		5		5		5		5				
+Stimulus.bar.height 		5		5		5		5		5		5		5		5		5							
+Stimulus.bar.orientation    	0		0		0		0		0		0		0		0		0				
+Stimulus.tau			0		0		0		0		0		0		0		0		0						
+Stimulus.pers.corr		1		1		1		1		1		1		1		1		1				
+Stimulus.randomize		0		0		0		0		0		0		0		0		0				
