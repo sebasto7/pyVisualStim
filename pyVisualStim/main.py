@@ -162,7 +162,9 @@ def main(path_stimfile):
     
     # shuffle epochs newly, if start or every epoch has been displayed
     if current_index == 0:
-        shuffle_index = shuffle_epochs(stimdict["randomize"][0],stimdict["EPOCHS"])
+        shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
+
+            
  
 
 ##############################################################################       
@@ -492,7 +494,7 @@ def main(path_stimfile):
         
 
         # choose next epoch
-        (epoch,current_index) = choose_epoch(shuffle_index,stimdict["randomize"][0],
+        (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZE"],
                                              stimdict["EPOCHS"],current_index)
         
         # Data for Output file
@@ -509,6 +511,8 @@ def main(path_stimfile):
                 warper = Warper(win, warp='spherical',warpfile = "",
                                 warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
                                 flipHorizontal = False, flipVertical = False)
+                # warper.changeProjection(warp='spherical', eyepoint = [x_eyepoint,y_eyepoint])
+                print('here I am')
         else:
             warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])    # Seb recently added: eyepoint = [x_eyepoint,y_eyepoint] 
         # Reset epoch timer

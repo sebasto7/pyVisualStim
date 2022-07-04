@@ -40,11 +40,16 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
     """
     win = window
     win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
-    win.color= bg_ls[0]
+    # win.color= bg_ls[0]
 
        
     # circle attributes
-    circle.radius = stimdict["radius"][epoch]
+    circle.radius= stimdict["radius"][epoch]
+    try:
+        circle.pos = (stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]) 
+    except:
+        print('circle in 0,0 coordinates')
+        circle.pos = (0,0) 
 
     # set timing
     tau = stimdict["tau"][epoch]
@@ -76,13 +81,7 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
         frame_shift = round((wave_lenght * frequency)/framerate)
 
         
-    
-    try:
-        circle.pos = (stimdict["x_center"][epoch],stimdict["y_center"][epoch]) 
-    except:
-        print('circle in 0,0 coordinates')
-        circle.pos = (0,0) 
-        
+
        
     # Information to print
     BG=  ((bg_ls[epoch][2]+1)/2)/(63.0/255.0) # Scaling values back to a range of [0 1]
@@ -116,9 +115,11 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
             if stimdict["stimtype"][epoch] == 'noisy_circle':
                 circle.fillColor = [-1, circle_texture[start_frame],circle_texture[start_frame]] # in RGB
                 circle.lineColor= [-1, circle_texture[start_frame],circle_texture[start_frame]] # in RGB
+                circle.radius= stimdict["radius"][epoch]
             else:
                 circle.fillColor = fg_ls[epoch]
                 circle.lineColor= fg_ls[epoch]
+                circle.radius= stimdict["radius"][epoch]
             circle.draw()
             
             
@@ -127,6 +128,7 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
             # circle attributes for drawing bg
             circle.fillColor = bg_ls[epoch] 
             circle.lineColor= bg_ls[epoch]
+            circle.radius= stimdict["radius"][epoch]
             circle.draw()
 
             
@@ -498,6 +500,12 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
         direction = 1
         
     _phaseValue = (stimdict['velocity'][epoch]/(framerate*stimdict['sWavelength'][epoch])) * direction
+    
+    # mask
+    if   stimdict['mask'][epoch]:
+        grating.mask = 'circle'
+        grating.pos = [stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]]
+        grating.size = stimdict['mask.size'][epoch]
     
     # variable to store
     if stimdict["stimtype"][epoch] == 'noisygrating':
