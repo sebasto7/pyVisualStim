@@ -3,6 +3,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
 from matplotlib import pyplot as plt # For some checks
@@ -51,24 +52,20 @@ def main(path_stimfile):
     dlp.addText('Want to use the DLP?')
     dlp_ok = dlp.show()
     
-    # Question: Tilted screen ?
-    _screen = gui.Dlg(title=u'Screen', pos=None, size=None, style=None,
-                  labelButtonOK=u' Yes ', labelButtonCancel=u' No ', screen=-1)
-    _screen.addText('Is the screen tilted?')
-    dlp_ok = _screen.show()
-    
-    if _screen.OK:
-        x_eyepoint = 0.5
-        y_eyepoint = 0.5
-    else:
-        x_eyepoint = 0.5
-        y_eyepoint = 1
-        
+    #Messages
+    mssg = gui.Dlg(title="Messages")
+    mssg.addText('In the next box, you will define the basic experimental parameter')    
+    mssg.addText('\nVIEWPOINTS have a range from 1 to -1. Eg., x = 0.5, y =0.5 refers to the screen center')
+    mssg.addText("WARP options for prespective correction: ‘spherical’, ‘cylindrical, ‘warpfile’ or None")
+    mssg.addText('\nPress OK to continue')
+    mssg.show()
+    if mssg.OK == False:
+        core.quit()  # user pressed cancel
     
     # Store info about the experiment session
-    psychopyVersion = '2020.2.2' 
-    exp_Info = {'ExpName': '','User': 'Seb', 'Session': '001'}
-    dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="UNDER CONSTRUCTION...")
+    exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject #': '001', 'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical'}
+    dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
+
     if dlg.OK == False:
         core.quit()  # user pressed cancel
         
@@ -76,7 +73,11 @@ def main(path_stimfile):
     exp_Info['date'] = "%d_%d_%d_%d_%d_%d.txt" %(_time.year,_time.month,
                                                 _time.day,_time.hour,
                                                 _time.minute,_time.second) 
-    exp_Info['psychopyVersion'] = psychopyVersion
+    exp_Info['psychopyVersion'] = psychopy.__version__
+    exp_Info['frameRate'] = config.FRAMERATE
+    exp_Info['distanceScreen'] = config.DISTANCE
+    exp_Info['screenWidth'] = config.SCREEN_WIDTH
+    
          
  ##############################################################################   
 
@@ -113,9 +114,9 @@ def main(path_stimfile):
     # What the useFBO does is render your window to an 'offscreen' window first 
     # before drawing that to the 'back buffer'and that process allows us to do 
     # some fancy transforms on the whole window when we then flip()
+
     
     #Initializing the window as a dark screen (color=[-1,-1,-1])
-    
     if dlp.OK:
         #Using the projector
         win = visual.Window(fullscr = False, monitor='dlp',
@@ -133,6 +134,10 @@ def main(path_stimfile):
         _height = 325
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
                             allowGUI=False, color=[-1,-1,-1],useFBO = True) 
+    
+    # Other screen parameters (In the App, they are set in the "Monitor Center")
+    win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
+    win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen 
         
     
     # #Detecting dropped frames if any
@@ -162,10 +167,12 @@ def main(path_stimfile):
     
     # shuffle epochs newly, if start or every epoch has been displayed
     if current_index == 0:
-        shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
+        try:
+            shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
+        except:
+            shuffle_index = shuffle_epochs(stimdict["randomize"][0],stimdict["EPOCHS"]) # Seb, temp line for old stimuli design
+                
 
-            
- 
 
 ##############################################################################       
 ######### Creating some attributes per epoch (Stimulus object, bg, fg)########
@@ -492,29 +499,30 @@ def main(path_stimfile):
         # stop condition becomse "True" 
     while not (len(event.getKeys()) > 0 or stop):
         
-
         # choose next epoch
-        (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZE"],
+        try: 
+            (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZE"],
                                              stimdict["EPOCHS"],current_index)
+        except:
+            (epoch,current_index) = choose_epoch(shuffle_index,stimdict['randomize'][0],
+                                             stimdict["EPOCHS"],current_index) # Seb, temp for old stimulus design
         
         # Data for Output file
         out.boutInd = out.boutInd + 1
         out.epochchoose = epoch
+ 
+        # Subjects view perspective
         
-         # warp for perspective correction
+        x_eyepoint = exp_Info['ViewPoint_x']
+        y_eyepoint = exp_Info['ViewPoint_y']
+        
+        # warp for perspective correction
         if stimdict["pers.corr"][epoch] == 1:
-            if _screen.OK: # Seb. now if and else do the same
-                warper = Warper(win, warp='spherical',warpfile = "",
+            warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
                                 warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
                                 flipHorizontal = False, flipVertical = False)
-            else: # Seb added temporary
-                warper = Warper(win, warp='spherical',warpfile = "",
-                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
-                                flipHorizontal = False, flipVertical = False)
-                # warper.changeProjection(warp='spherical', eyepoint = [x_eyepoint,y_eyepoint])
-                print('here I am')
         else:
-            warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])    # Seb recently added: eyepoint = [x_eyepoint,y_eyepoint] 
+            warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
         # Reset epoch timer
         duration_clock = global_clock.getTime()  
         try:

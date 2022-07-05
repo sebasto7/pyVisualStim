@@ -82,7 +82,7 @@ class Output(object):
     
         outfile_temp_name = "%s\\%s.txt" %(location,config.OUTFILE_NAME)
         outFile_temp = open(outfile_temp_name, 'w')
-        expInfo = '%s %s %s\n' % (exp_Info["ExpName"],exp_Info["User"],exp_Info["Session"] )
+        expInfo = '%s %s %s\n' % (exp_Info["ExpName"],exp_Info["User"],exp_Info["Subject #"] )
         stimfile = '%s\n' % (path_stimfile)
         outFile_temp.write(expInfo)
         outFile_temp.write(stimfile)
@@ -144,7 +144,7 @@ class Stimulus(object):
 
 def write_main_setup(location,dlp_ok,MAXRUNTIME):
 
-    """ Writes the main_booleans file which logs global settings """
+    """ Writes the meta_data file which logs global settings """
 
     # A temporary mainfile, containing data of last run
     mainfile_name_temp = "%s\\%s.txt" %(location,config.MAINFILE_NAME)
@@ -155,12 +155,12 @@ def write_main_setup(location,dlp_ok,MAXRUNTIME):
     
 def save_main_setup(location):
 
-    """ Copies the current main_booleans file to a timestamped main_booleans file.
-    Not sure if we need that."""
+    """ Copies the current meta_data file to a timestamped meta_data file.
+    This is execution specific."""
     
     # A permanently saved mainfile copy with time stemp
     time = datetime.datetime.now()
-    mainfile_name = "%s\\_main_booleans_%d_%d_%d_%d_%d_%d.txt" %(location,time.year,time.month,time.day,time.hour,time.minute,time.second)
+    mainfile_name = "%s\\_meta_data_%d_%d_%d_%d_%d_%d.txt" %(location,time.year,time.month,time.day,time.hour,time.minute,time.second)
     
     mainfile_temp = "%s\\%s.txt" %(location, config.MAINFILE_NAME)
     with open(mainfile_temp) as source:
