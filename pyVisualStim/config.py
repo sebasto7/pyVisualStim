@@ -42,13 +42,13 @@ EXP_NAME = 'Input the experiment name'
 OUT_DIR = r'C:\Users\smolina\2pstim OutputFiles' 
 
 # For output file configutation
-MAINFILE_NAME = "_main_booleans"
+MAINFILE_NAME = "_meta_data"
 OUTFILE_NAME = "_stimulus_output"
 
 # For screen configuration
 FRAMERATE = 60 # Check refresh rate of your screen (here, PC monitor or projector)
-DISTANCE = 5.36  # Distance of the fly to the screen
-SCREEN_WIDTH = 9 # Width of the window's projection area
+DISTANCE = 3.1# Distance of the fly to the screen
+SCREEN_WIDTH = 6.2 # Width of the window's projection area
 VIEWPOS_FILE = 'viewpositions.txt' # Contains window' size and position on the screen
 
 
@@ -57,8 +57,8 @@ MAXRUNTIME = 3600
 SEED = 54378  # To keep reproducibility among experiments >> DO NOT CHANGE this SEED number: (54378, original from 2020)
 
 # For NIDAQ configuration
-COUNTER_CHANNEL = "Dev2/ctr1"
-PULSE_CHANNEL = "Dev2/ctr0"  # Consider using not a counter but digital mode 'port1/line0' (digital channel)
+COUNTER_CHANNEL = "Dev1/ctr1" # or "Dev2/ctr1"
+PULSE_CHANNEL = "Dev1/ctr0"  #or "Dev2/ctr0". Consider using not a counter but digital mode 'port1/line0' (digital channel)
 MAXRATE = 10000.0 # Seb, currently unused
 
 

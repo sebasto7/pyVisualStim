@@ -378,7 +378,7 @@ def set_intensity(epoch,value):
     intensity = [0] * 3
 
     intensity[0] = 0.0 * 2 - 1  # the *2-1 part converts the color space [0,1] -> [-1,1]
-    intensity[1] = get_dlpcol(value, 'G') * 2 - 1
+    intensity[1] = 0.0 * 2 - 1  # the *2-1 part converts the color space [0,1] -> [-1,1] , before get_dlpcol(value, 'G') * 2 - 1
     intensity[2] = get_dlpcol(value, 'B') * 2 - 1
 
     return intensity
@@ -406,8 +406,8 @@ def get_dlpcol(DLPintensity,channel):
     
     temp = 0
     
-    if channel == 'G':
-        temp = pow(DLPintensity/scale_gr , 1/gamma_gr)
+    # if channel == 'G':
+    #     temp = pow(DLPintensity/scale_gr , 1/gamma_gr) # Seb, commented 2022.06.07
     
     if channel == 'B':
         temp = pow(DLPintensity/scale_bl, 1/gamma_bl)

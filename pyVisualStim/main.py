@@ -116,28 +116,38 @@ def main(path_stimfile):
     # some fancy transforms on the whole window when we then flip()
 
     
+
     #Initializing the window as a dark screen (color=[-1,-1,-1])
     if dlp.OK:
         #Using the projector
+        #mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor='dlp',
-                            size = [_width,_height], viewScale = [1,1/2],
+                            size = [_width,_height], viewScale = [1,1],
                             pos = [_xpos,_ypos], screen = 1, 
                             color=[-1,-1,-1],useFBO = True,allowGUI=False, 
                             viewOri = 0.0) 
         # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
         # viewOri to compensate for the tilt of the projector. 
-        # If screen is already being tilted by Windows settings, set to 0.0
+        # If screen is already being tilted by Windows settings, set to 0.0 (deg)
 
     else:
         #In test mode on the PC screen
-        _width = 325
-        _height = 325
+        _width = 325 # should genertae a window be of size = config.SCREEN_WIDTH on your PC monitor
+        _height = 325 # should genertae a window be of size = config.SCREEN_WIDTH on your PC monitor
+        
+        _width = 1920
+        _height = 1080
+        
+        #_width = 1080
+        #_height = 1080
+        
+        #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
-                            allowGUI=False, color=[-1,-1,-1],useFBO = True) 
+                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0) 
     
     # Other screen parameters (In the App, they are set in the "Monitor Center")
-    win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
-    win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen 
+    #win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
+    #win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen 
         
     
     # #Detecting dropped frames if any
@@ -521,6 +531,9 @@ def main(path_stimfile):
             warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
                                 warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
                                 flipHorizontal = False, flipVertical = False)
+            #warper.dist_cm = config.DISTANCE# debug_chris
+            warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
+            #print(f'Warper eyepoints: {warper.eyepoint}')
         else:
             warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
         # Reset epoch timer

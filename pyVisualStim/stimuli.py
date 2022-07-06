@@ -38,10 +38,14 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
     framerate: is the refresh rate of the monitor
         
     """
+    
     win = window
     win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
     # win.color= bg_ls[0]
 
+    # Print temporary
+    print(f'Screen width from config: {win.scrWidthCM}')
+    print(f'Distance to screen from config: {win.scrDistCM}')
        
     # circle attributes
     circle.radius= stimdict["radius"][epoch]
@@ -113,8 +117,8 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
         if global_clock.getTime()-duration_clock >= tau:
             # circle attributes for drawing fg
             if stimdict["stimtype"][epoch] == 'noisy_circle':
-                circle.fillColor = [-1, circle_texture[start_frame],circle_texture[start_frame]] # in RGB
-                circle.lineColor= [-1, circle_texture[start_frame],circle_texture[start_frame]] # in RGB
+                circle.fillColor = [-1, -1,circle_texture[start_frame]] # in RGB
+                circle.lineColor= [-1, -1,circle_texture[start_frame]] # in RGB
                 circle.radius= stimdict["radius"][epoch]
             else:
                 circle.fillColor = fg_ls[epoch]
@@ -430,8 +434,10 @@ def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duratio
             #Geeting RGB values for the texture    
             rgb_t = numpy.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = -1 # All R value to -1
-            for i in range(2):
-                rgb_t[:,:,i+1] = t # Setting G and B values
+            rgb_t[:,:,1] = -1 # All G value to -1
+            rgb_t[:,:,2] = t
+            # for i in range(1):
+            #     rgb_t[:,:,i+1] = t # Setting G and B values
                 
             # noise.tex = t
             noise.tex = rgb_t
@@ -502,11 +508,15 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
     _phaseValue = (stimdict['velocity'][epoch]/(framerate*stimdict['sWavelength'][epoch])) * direction
     
     # mask
-    if   stimdict['mask'][epoch]:
-        grating.mask = 'circle'
-        grating.pos = [stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]]
-        grating.size = stimdict['mask.size'][epoch]
-    
+    try:
+        if stimdict['mask'][epoch]:
+            grating.mask = 'circle'
+            grating.pos = [stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]]
+            grating.size = stimdict['mask.size'][epoch]
+    except:
+        pass
+            
+        
     # variable to store
     if stimdict["stimtype"][epoch] == 'noisygrating':
         output_value = stimdict['SNR'][epoch]
