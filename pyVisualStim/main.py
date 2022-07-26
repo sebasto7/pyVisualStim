@@ -132,14 +132,11 @@ def main(path_stimfile):
 
     else:
         #In test mode on the PC screen
-        _width = 325 # should genertae a window be of size = config.SCREEN_WIDTH on your PC monitor
-        _height = 325 # should genertae a window be of size = config.SCREEN_WIDTH on your PC monitor
-        
-        _width = 1920
-        _height = 1080
-        
-        #_width = 1080
-        #_height = 1080
+        _width = 325 # should generate a window be of size = 9cm
+        _height = 325 # should generate a window be of size = 9cm
+
+        _width = 1920 # Full size in my ASUS VG248 monitor
+        _height = 1080 # Full size in my ASUS VG248 monitor
         
         #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
@@ -531,7 +528,7 @@ def main(path_stimfile):
             warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
                                 warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
                                 flipHorizontal = False, flipVertical = False)
-            #warper.dist_cm = config.DISTANCE# debug_chris
+            warper.dist_cm = config.DISTANCE# debug_chris
             warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
             #print(f'Warper eyepoints: {warper.eyepoint}')
         else:

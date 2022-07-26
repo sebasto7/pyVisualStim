@@ -272,6 +272,8 @@ def drifting_stripe(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_
     scr_distance = win.scrDistCM
     maxhorang = max_horizontal_angle(scr_width, scr_distance)
     maxhorang = maxhorang * stimdict["direction"][epoch] # x_position should be either 1 or -1
+    maxverang = max_vertical_angle(scr_width, scr_distance)
+    maxverang = maxverang * stimdict["direction"][epoch] # x_position should be either 1 or -1
     
     #Adjusting for the rectangle edge to be printed to screen edge
     if maxhorang  > 0:
