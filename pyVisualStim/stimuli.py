@@ -294,6 +294,7 @@ def drifting_stripe(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_
     # "bar.initPos" attribute are present in only some stimuli
     try: 
         init_pos  = stimdict["bar.initPos"][epoch]
+        print(f'Initial position: {init_pos} ')
     except:
         init_pos = 0.0 # In case the stim input file does not have an initial position, put it to the center
         
