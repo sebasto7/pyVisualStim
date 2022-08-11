@@ -39,7 +39,7 @@
 # For user configuration
 MY_ID = 'seb'
 EXP_NAME = 'Input the experiment name'
-OUT_DIR = r'C:\Users\smolina\2pstim OutputFiles' 
+OUT_DIR = r'U:\Dokumente\pyVisualStim_OutputFiles' 
 
 # For output file configutation
 MAINFILE_NAME = "_meta_data"
@@ -47,9 +47,9 @@ OUTFILE_NAME = "_stimulus_output"
 
 # For screen configuration
 FRAMERATE = 60# Check refresh rate of your screen (here, PC monitor or projector)
-DISTANCE = 5# Distance of the fly to the screen, For dlp 90deg: 5 cm, For ASUS monitor: 10, For dlp 45deg: ? (5.36?)
-SCREEN_WIDTH = 12 # Width of the window's projection area, For dlp 90deg: 12, For ASUS monitor: 30,  For dlp 45deg: ? (9?)
-VIEWPOS_FILE = 'viewpositions.txt' # Contains window' size and position on the screen
+DISTANCE = 6# Distance of the fly to the screen, For dlp 90deg: 5 cm, For ASUS monitor: 10, For dlp 45deg: ? (5.36?)
+SCREEN_WIDTH = 20 # Width of the window's projection area, For dlp 90deg: 12, For ASUS monitor: 30,  For dlp 45deg: ? (9?)
+VIEWPOS_FILE = r'\\fs02\smolina$\Dokumente\GitHub\pyVisualStim\viewpositions.txt' # Contains window' size and position on the screen
 
 
 # Other configurations

@@ -156,8 +156,9 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
         
         # #SavingMovieFrames
         # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
-                      
+               
     return (out, lastDataFrame, lastDataFrameStartTime)
+ 
 
 def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile, out, bar, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
@@ -677,6 +678,8 @@ def dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, 
             
     dots.setAutoDraw(False)
     return (out, lastDataFrame, lastDataFrameStartTime)
+
+print("Module 'stimuli' imported")  
 
 
 

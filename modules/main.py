@@ -7,7 +7,7 @@ import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
 from matplotlib import pyplot as plt # For some checks
-from stimuli import *
+import  stimuli
 from helper import *
 from exceptions import *
 import PyDAQmx as daq
@@ -137,6 +137,8 @@ def main(path_stimfile):
 
         _width = 1920 # Full size in my ASUS VG248 monitor
         _height = 1080 # Full size in my ASUS VG248 monitor
+        _width = 800 # Full size in my ASUS VG248 monitor
+        _height = 800 # Full size in my ASUS VG248 monitor
         
         #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
@@ -540,33 +542,33 @@ def main(path_stimfile):
             # Functions that draw the different stimuli
             if stimdict["stimtype"][epoch] == "stripe(s)":
                 
-                (out, lastDataFrame, lastDataFrameStartTime) = flashing_stripes(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.flashing_stripes(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
                                                                 
             elif stimdict["stimtype"][epoch][-6:]== "circle":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
             
             elif stimdict["stimtype"][epoch] == "driftingstripe":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = drifting_stripe(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
                     
             
             elif stimdict["stimtype"][epoch] == "noise":
                     
-                (out, lastDataFrame, lastDataFrameStartTime) = stim_noise(bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
                 
             elif stimdict["stimtype"][epoch][-7:] == "grating":
                     
-                (out, lastDataFrame, lastDataFrameStartTime)= noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
                 
             elif stimdict["stimtype"][epoch] == "dottygrating":
                     
-                (out, lastDataFrame, lastDataFrameStartTime)= dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch][0],stim_object_ls[epoch][1],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
             
             
