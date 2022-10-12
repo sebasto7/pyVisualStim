@@ -11,9 +11,9 @@ import  stimuli
 from helper import *
 from exceptions import *
 import PyDAQmx as daq
-# The PyDAQmx module is a full interface to the NIDAQmx ANSI C driver. 
-# It imports all the functions from the driver and imports all the predefined 
-# constants. 
+# The PyDAQmx module is a full interface to the NIDAQmx ANSI C driver.
+# It imports all the functions from the driver and imports all the predefined
+# constants.
 # This provides an almost one-to-one match between C and Python code
 import pyglet.window.key as key
 import numpy as np
@@ -24,26 +24,26 @@ import time
 
 #%%
 def main(path_stimfile):
-    """ 
+    """
         This function handles the window,logging, nidaq and played stimulus ...
-    
+
         It also contains the monitor information you might want to edit.
         Press **Esc** to end the presentation immediately.
         Press **any key** to end the presentation after this epoch.
-        
+
         :param path_stimfile: the path to the stimulus txt file
         :type path_stimfile: str
-        
+
         .. note::
-        The stimulus attributes specified in the txt file will change several 
-        options, such as: prespective correction, randomization of epoch order, 
-        stimulus type, etc. For more info, check each stimulus txt file and the 
+        The stimulus attributes specified in the txt file will change several
+        options, such as: prespective correction, randomization of epoch order,
+        stimulus type, etc. For more info, check each stimulus txt file and the
         function that controls it specified under Stimulus.stimtype
-            
-    
+
+
     """
-    
-##############################################################################    
+
+##############################################################################
 ################################### GUI INPUTS ###############################
 ##############################################################################
     # Question: Put it on DLP ?
@@ -51,41 +51,43 @@ def main(path_stimfile):
                   labelButtonOK=u' Yes ', labelButtonCancel=u' No ', screen=-1)
     dlp.addText('Want to use the DLP?')
     dlp_ok = dlp.show()
-    
+
     #Messages
     mssg = gui.Dlg(title="Messages")
-    mssg.addText('In the next box, you will define the basic experimental parameter')    
+    mssg.addText('In the next box, you will define the basic experimental parameter')
     mssg.addText('\nVIEWPOINTS have a range from 1 to -1. Eg., x = 0.5, y =0.5 refers to the screen center')
     mssg.addText("WARP options for prespective correction: ‘spherical’, ‘cylindrical, ‘warpfile’ or None")
     mssg.addText('\nPress OK to continue')
     mssg.show()
     if mssg.OK == False:
         core.quit()  # user pressed cancel
-    
+
     # Store info about the experiment session
-    exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject #': '001', 'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical'}
+    exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject_ID': '001',
+                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical'
+                'Screen_mask': 1}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
         core.quit()  # user pressed cancel
-        
+
     _time = datetime.datetime.now()
     exp_Info['date'] = "%d_%d_%d_%d_%d_%d.txt" %(_time.year,_time.month,
                                                 _time.day,_time.hour,
-                                                _time.minute,_time.second) 
+                                                _time.minute,_time.second)
     exp_Info['psychopyVersion'] = psychopy.__version__
     exp_Info['frameRate'] = config.FRAMERATE
     exp_Info['distanceScreen'] = config.DISTANCE
     exp_Info['screenWidth'] = config.SCREEN_WIDTH
-    
-         
- ##############################################################################   
 
-    
+
+ ##############################################################################
+
+
     # Create output file
     out = Output()
     outFile = out.create_outfile_temp(config.OUT_DIR,path_stimfile,exp_Info)
-    
+
     # Read coonfig settings
     MAXRUNTIME = config.MAXRUNTIME
     framerate = config.FRAMERATE;
@@ -93,29 +95,27 @@ def main(path_stimfile):
     current_index = 0
     epoch = 0 #First epoch of the stimulus file
     stop = False
-    
-    # Read stimulus file 
+
+    # Read stimulus file
     stimulus = Stimulus(fname)
     stimdict = stimulus.dict
-            
+
     # Read Viewpositions
     viewpos = Viewpositions(config.VIEWPOS_FILE)
     _width = viewpos.width[0]
     _height = viewpos.height[0]
     _xpos = viewpos.x[0]
     _ypos = viewpos.y[0]
-    
+
 ##############################################################################
 ############### Creating the window where to draw your screen ################
-##############################################################################    
-    
-    # IMPORTANT: in order to use warper for perspective correction, 
-    # useFBO = True is important for our window
-    # What the useFBO does is render your window to an 'offscreen' window first 
-    # before drawing that to the 'back buffer'and that process allows us to do 
-    # some fancy transforms on the whole window when we then flip()
+##############################################################################
 
-    
+    # IMPORTANT: in order to use warper for perspective correction,
+    # useFBO = True is important for our window
+    # What the useFBO does is render your window to an 'offscreen' window first
+    # before drawing that to the 'back buffer'and that process allows us to do
+    # some fancy transforms on the whole window when we then flip()
 
     #Initializing the window as a dark screen (color=[-1,-1,-1])
     if dlp.OK:
@@ -123,11 +123,11 @@ def main(path_stimfile):
         #mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor='dlp',
                             size = [_width,_height], viewScale = [1,1],
-                            pos = [_xpos,_ypos], screen = 1, 
-                            color=[-1,-1,-1],useFBO = True,allowGUI=False, 
-                            viewOri = 0.0) 
+                            pos = [_xpos,_ypos], screen = 1,
+                            color=[-1,-1,-1],useFBO = True,allowGUI=False,
+                            viewOri = 0.0)
         # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
-        # viewOri to compensate for the tilt of the projector. 
+        # viewOri to compensate for the tilt of the projector.
         # If screen is already being tilted by Windows settings, set to 0.0 (deg)
 
     else:
@@ -139,24 +139,24 @@ def main(path_stimfile):
         _height = 1080 # Full size in my ASUS VG248 monitor
         _width = 800 # Full size in my ASUS VG248 monitor
         _height = 800 # Full size in my ASUS VG248 monitor
-        
+
         #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
-                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0) 
-    
+                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
+
     # Other screen parameters (In the App, they are set in the "Monitor Center")
     #win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
-    #win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen 
-        
-    
+    #win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen
+
+
     # #Detecting dropped frames if any
     # win.setRecordFrameIntervals(True)
     # # warn if frame is late more than 4 ms
-    # win._refreshTreshold = 1/config.FRAMERATE+0.004 
+    # win._refreshTreshold = 1/config.FRAMERATE+0.004
     # logging.console.setLevel(logging.WARNING)
-    
-############################################################################## 
-    
+
+##############################################################################
+
     # store frame rate of monitor if we can measure it
     exp_Info['frameRate'] = win.getActualFrameRate()
     if exp_Info['frameRate'] != None:
@@ -166,24 +166,52 @@ def main(path_stimfile):
 
 
 
-    # Forcing the MAXRUNTIME to be 0 in test mode 
+    # Forcing the MAXRUNTIME to be 0 in test mode
     if not dlp.OK:
         stimdict["MAXRUNTIME"] = 0
-    
 
-    # Write main setup to file
+
+    # Write main setup to file (metadata)
     write_main_setup(config.OUT_DIR,dlp.OK,config.MAXRUNTIME)
-    
+
     # shuffle epochs newly, if start or every epoch has been displayed
     if current_index == 0:
         try:
             shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
         except:
             shuffle_index = shuffle_epochs(stimdict["randomize"][0],stimdict["EPOCHS"]) # Seb, temp line for old stimuli design
-                
+
+##############################################################################
+# Creating a general screen mask for fitting a big screen into a smaller one #
+##############################################################################
+
+if exp_Info['Screen_mask']:
+    # TODO: make the ['x_position','y_position'] and ['width','height'] values based on percentage of the screen to mask
+    # Eg. Width and height: (percentage to multiple to the total screen width (in degrees))
+    #   Upper rectangle: [100%, 50%]
+    #   Lateral rectangles: [25%, 100%]
+    #For x and y position is different since the centre is (0,0) and then goes to positive and negative degrees in X and Y
+    #Meaning, for a 80 deg screen, it goes from (+40 to -40)
+    # Eg. x_position and y_position: (remember that the position is where to draw the center od the rectangle)
+    #   Upper rectangle: [0, +50%]
+    #   Lateral rectangles: [-12,5%, 0], [+12,5%, 0]
+
+    masks_pos =[['x','y'],['x','y'],['x','y']] #Fill in: center location for each rectangular mask (in degrees)
+    mask_size = [['width','height'],['width','height'],['width','height']] #Fill in: size for each rectangular mask  (in degrees)
+    rect_masks = []
+    for i in range(len(mask_size)):
+        screen_mask = visual.Rect(win, pos = masks_pos[i], size = masks_size[i], lineWidth=0)
+        rect_masks.append(screen_mask)
+
+    # The screen-shot is a single collage image composed of static elements that you can treat as being a single stimulus.
+    # The screen-shot can be of the visible screen (front buffer) or hidden (back buffer).
+    # BufferImageStim aims to provide fast rendering, while still allowing dynamic orientation, position, and opacity.
+    # It’s fast to draw but slower to init (same as an ImageStim).
+    rect_buffer = visual.BufferImageStim(win, buffer='back', stim=rect_masks, sqPower2=False,
+                    interpolate=False, name='rect-buffer', autoLog=True)
 
 
-##############################################################################       
+##############################################################################
 ######### Creating some attributes per epoch (Stimulus object, bg, fg)########
 ##############################################################################
     # Generating or loading any stimulus data if STIMULUSDATA is not NULL
@@ -214,7 +242,7 @@ def main(path_stimfile):
                     sine_signal = (np.sin(2 * np.pi * f * x / dimension)/2 +0.5)
 
                     # Scaling the signal
-                    #It stills need to me done differently. the MContrast scaling is not properly working and the scaling is not symmetric. 
+                    #It stills need to me done differently. the MContrast scaling is not properly working and the scaling is not symmetric.
                     stim_texture  = (sine_signal  * 2*(FG - BG)* (63.0/255.0))-1 + (BG*(63.0/255.0)*2)# Scaling the signal to [-1,1] range, from 8bit to 6bit range and  to chosen MContrast
                     stim_texture_min = np.min(stim_texture)
 
@@ -222,7 +250,7 @@ def main(path_stimfile):
                     stim_texture = np.tile(stim_texture, [dimension,1]) # Saving 2D wave in the list
                     stim_texture_ls.append(stim_texture)
 
-                        
+
 
                 if stimdict["STIMULUSDATA"][11:16] == "NOISY":
                     _useNoise = True
@@ -241,7 +269,7 @@ def main(path_stimfile):
                         print(f'SNR {i}: {target_snr}')
                         # SNR as mean of standard deviation of signal/standard deviation of noise
                         # Wikipedia coeficient of variation definition
-                        
+
                         signal = stim_texture_ls[i][1]
                         signal_mean = np.mean(signal)
                         signal_std = np.std(signal)
@@ -257,7 +285,7 @@ def main(path_stimfile):
                             print(f'WARNING!!! NOISE CLIPPING FOR EPOCH: {i}')
                         noise_rms = np.sqrt(np.mean(noise_arr[0,:,:]**2))
                         noise_array_ls.append(noise_arr)
-                        
+
                         # Plotting what it will be presented
                         max_value = (2*(63.0/255.0))-1 # Max value in stim_texture after scaling
                         min_value = -1 # Min value in stim_texture after scaling
@@ -266,19 +294,19 @@ def main(path_stimfile):
                         noisy_sinosoidal_wave[np.where(noisy_sinosoidal_wave<min_value)] = min_value
                         # plt.plot(noisy_sinosoidal_wave)
                         # plt.show()
-                        
+
                         # Calculating std for noise based on SNR definition in dB
-                        
+
                         # target_snr_db = 10* (np.log10(mean_signal/np.sqrt(noise_std)))
                         # target_snr_db = 10* (np.log10(signal_std/noise_std))
                         target_snr_db = 20* np.log10(signal_rms/noise_rms) # Wikipedia decibels definition
                         # print(f'SNR_dB {i}: {target_snr_db}')
-                    
+
                 else:
                     noise_array_ls = list()
                     for e in range(stimdict["EPOCHS"]):
                         noise_array_ls.append(None)
-                        
+
             elif  stimdict["STIMULUSDATA"] == "TERNARY_TEXTURE":
                 stim_texture_ls = list()
                 noise_array_ls = list()
@@ -301,10 +329,10 @@ def main(path_stimfile):
                     y=int(stimdict["texture.vert_size"][1])
                     np.random.seed(config.SEED)
                     stim_texture= np.random.choice(choiseArr, size=(z,x,y))
-                
-                stim_texture_ls.append(stim_texture) 
+
+                stim_texture_ls.append(stim_texture)
                 noise_array_ls.append(None)
-                
+
             elif  stimdict["STIMULUSDATA"] == "POLIGON":
                 stim_texture_ls = list()
                 noise_array_ls = list()
@@ -312,14 +340,14 @@ def main(path_stimfile):
                 y=int(stimdict["texture.vert_size"][1])
                 z= 10000 # z- dimension (here frames presented over time)
                 curr_arr = np.zeros(size=(z,x,y))
-                
-                
-                
+
+
+
             else: # Specific case for older files (used in 2pstim-C- in which ["STIMULUSDATA"] was not specified
                  stim_texture = h5py.File(stimdict["STIMULUSDATA"])
                  stim_texture= stim_texture['stimulus'][()]
                  stim_texture= stim_texture[0:10000,:,:] # 10000 is a fix value
-    
+
     else: # When ["STIMULUSDATA"]is == "NULL"
         stim_texture_ls = list()
         noise_array_ls = list()
@@ -328,119 +356,119 @@ def main(path_stimfile):
             noise_array_ls.append(None)
         _useTex = False
         _useNoise = False
-        
+
     # Creating the stimulus object per epoch
-    stim_object_ls = list() 
+    stim_object_ls = list()
     for i,stimtype in enumerate(stimdict["stimtype"]):
         if stimdict["pers.corr"][i] == 1:
             _units = 'deg' # Keep in "deg" when using the warper.
 
         else:
-            #'degFlatPos' is the correct unit for having a correct screen size 
+            #'degFlatPos' is the correct unit for having a correct screen size
             # in degrees when the perspective is not corrected by the warper.
-            _units = 'degFlatPos' 
-            
+            _units = 'degFlatPos'
+
         if stimtype[-6:] == "circle":
             circle = visual.Circle(win, units=_units, edges = 128)
             stim_object = circle
-            
+
         elif stimtype ==  "stripe(s)":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
-            
+
         elif stimtype ==  "driftingstripe":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
-            
+
         elif stimtype == "noise":
             noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')
             stim_object = noise
-            
+
         elif stimtype[-7:] == "grating":
-            grating = visual.GratingStim(win,units=_units, name='grating', 
+            grating = visual.GratingStim(win,units=_units, name='grating',
                                          tex='sqr',colorSpace='rgb',
-                                         blendmode='avg',texRes=128, 
-                                         interpolate=True, depth=-1.0, 
+                                         blendmode='avg',texRes=128,
+                                         interpolate=True, depth=-1.0,
                                          phase = (0,0))
-            # noise = visual.NoiseStim(win,units=_units, name='noise', 
+            # noise = visual.NoiseStim(win,units=_units, name='noise',
             #                          colorSpace='rgb',noiseType='Binary',
-            #                          noiseElementSize=0.0625,noiseBaseSf=8.0, 
+            #                          noiseElementSize=0.0625,noiseBaseSf=8.0,
             #                          noiseBW=1,noiseBWO=30, noiseOri=0.0,
             #                          noiseFractalPower=0.0,noiseFilterLower=1.0,
             #                          noiseFilterUpper=8.0, noiseFilterOrder=0.0,
             #                          noiseClip=3.0, interpolate=False, depth=0.0)
             # noise.buildNoise()
             stim_object =grating
-            
+
         elif stimtype ==  "dottygrating":
-            grating = visual.GratingStim(win,units=_units, name='grating', 
+            grating = visual.GratingStim(win,units=_units, name='grating',
                                          tex='sqr',colorSpace='rgb',blendmode='avg',
-                                         texRes=128, interpolate=True, depth=-1.0, 
+                                         texRes=128, interpolate=True, depth=-1.0,
                                          phase = (0,0))
             dots = visual.DotStim( win=win, name='dots', units=_units,
                                   nDots=int(stimdict["nDots"][i]), dotSize=5,
                                   speed=0.1, dir=0.0, coherence=1.0,
                                   fieldPos=(0.0, 0.0), fieldSize=2.0,
-                                  fieldShape='square',signalDots='same', 
+                                  fieldShape='square',signalDots='same',
                                   noiseDots='position',dotLife=3,
-                                  color=[-1.0,-0.7366,-0.7529], colorSpace='rgb', 
+                                  color=[-1.0,-0.7366,-0.7529], colorSpace='rgb',
                                   opacity=1, depth=-1.0)
             stim_object =[grating,dots]
-            
+
         stim_object_ls.append(stim_object)
-        
-        
+
+
     # Creating backgroung (bg) and foreground (fg) colors  per epoch
     bg_ls = list()
-    fg_ls = list() 
+    fg_ls = list()
     for e in range(stimdict["EPOCHS"]):
-    
-        # Setting stimulus backgroung (bg) and foreground (fg) colors 
-        try: 
+
+        # Setting stimulus backgroung (bg) and foreground (fg) colors
+        try:
             if stimdict["lum"][e] == 111:
                 # Gamma correction and 6-bit depth transformation
                 bg = set_intensity(e,stimdict["bg"][e])
                 fg = set_intensity(e,stimdict["fg"][e])
                 bg_ls.append(bg)
                 fg_ls.append(fg)
-                
+
             elif stimdict["lum"][e] or stimdict["contrast"][e]:
                 # Gamma correction and 6-bit depth transformation
-                bg = set_bgcol(stimdict["lum"][e],stimdict["contrast"][e]) 
+                bg = set_bgcol(stimdict["lum"][e],stimdict["contrast"][e])
                 fg = set_fgcol(stimdict["lum"][e],stimdict["contrast"][e])
                 bg_ls.append(bg)
                 fg_ls.append(fg)
-            
+
             else:
                 # Gamma correction and 6-bit depth transformation
                 bg = set_intensity(e,stimdict["bg"][e])
                 fg = set_intensity(e,stimdict["fg"][e])
                 bg_ls.append(bg)
                 fg_ls.append(fg)
-                
+
         except:
             # Gamma correction and 6-bit depth transformation
             bg = set_intensity(e,stimdict["bg"][e])
             fg = set_intensity(e,stimdict["fg"][e])
             bg_ls.append(bg)
             fg_ls.append(fg)
-            
+
 ##############################################################################
 ############################ NIDAQ CONFIGURATION #############################
 ##############################################################################
 
     # Initialize Time
-    global_clock = core.Clock() 
-    
+    global_clock = core.Clock()
+
     # Timer initiation
-    duration_clock = global_clock.getTime() # it will be reset at every epoch    
-    
+    duration_clock = global_clock.getTime() # it will be reset at every epoch
+
 
     if dlp.OK:
         print('DLP used')
 
-        counterTaskHandle = daq.TaskHandle(0) 
-        pulseTaskHandle = daq.TaskHandle(0)   
+        counterTaskHandle = daq.TaskHandle(0)
+        pulseTaskHandle = daq.TaskHandle(0)
         counterChannel = config.COUNTER_CHANNEL
         pulseChannel = config.PULSE_CHANNEL
         maxRate = config.MAXRATE
@@ -451,7 +479,7 @@ def main(path_stimfile):
         lastDataFrameStartTime = 0
 
         #DAQ SETUP FOR IMAGING SYNCHRONIZATION
-        try:    
+        try:
             # DAQmx Configure Code
             daq.DAQmxCreateTask("2",daq.byref(counterTaskHandle))
             daq.DAQmxCreateCICountEdgesChan(counterTaskHandle,counterChannel,
@@ -461,74 +489,74 @@ def main(path_stimfile):
             daq.DAQmxCreateCOPulseChanTime(pulseTaskHandle,pulseChannel,
                                            "",daq.DAQmx_Val_Seconds,
                                            daq.DAQmx_Val_Low,0,0.05,0.05)
-            
+
             # DAQmx Start Code
             daq.DAQmxStartTask(counterTaskHandle) # Reading any coming frame.
             daq.DAQmxStartTask(pulseTaskHandle)   # Sending trigger to mic.
 
-            # Reads incoming signal from microscope computer and stores it to 
-            # 'data'. A rising edge is send every new frame the microscope 
+            # Reads incoming signal from microscope computer and stores it to
+            # 'data'. A rising edge is send every new frame the microscope
             # starts to record, thus the 'data' variable is incremented
             daq.DAQmxReadCounterScalarU32(counterTaskHandle,1.0,
                                           daq.byref(data), None)
-            
-            # Do we need that here? Check it with hardware. 
-            # Checks if new frame is being imaged.            
+
+            # Do we need that here? Check it with hardware.
+            # Checks if new frame is being imaged.
             if (lastDataFrame != data.value):
                 lastDataFrame = data.value
                 lastDataFrameStartTime = global_clock.getTime()
 
         except daq.DAQError as err:
             print ("DAQmx Error: %s"%err)
-                
-    else: 
-        # When not using dlp (Checking the stimulus in th PCs monitor), 
-        # some varibales need to be defined anyways, although they are 
-        # not being change every frame.        
+
+    else:
+        # When not using dlp (Checking the stimulus in th PCs monitor),
+        # some varibales need to be defined anyways, although they are
+        # not being change every frame.
         counterTaskHandle = None
         data = daq.uInt32(1)
         lastDataFrame = 0
         lastDataFrameStartTime = 0
         print('No DLP used')
-            
+
 ##############################################################################
 ######### MAIN Loop which calls the functions to draw stim on screen #########
-##############################################################################        
-    
+##############################################################################
+
     # Pause between sending the trigger to microscope and displaying stimuli
     # For not presenting the simuli during aninitial increase in fluorescence
     # that happens sometimes when the microscope starts scanning
     print('Microscope scanning started')
     print('5s pause...')
-    time.sleep(5) 
+    time.sleep(5)
     print('Stimulus started')
-    
+
     # Main Loop: dit diplays the stimulus unless:
         # keyboard key is pressed (manual stop)
-        # stop condition becomse "True" 
+        # stop condition becomse "True"
     while not (len(event.getKeys()) > 0 or stop):
-        
+
         # choose next epoch
-        try: 
+        try:
             (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZE"],
                                              stimdict["EPOCHS"],current_index)
         except:
             (epoch,current_index) = choose_epoch(shuffle_index,stimdict['randomize'][0],
                                              stimdict["EPOCHS"],current_index) # Seb, temp for old stimulus design
-        
+
         # Data for Output file
         out.boutInd = out.boutInd + 1
         out.epochchoose = epoch
- 
+
         # Subjects view perspective
-        
+
         x_eyepoint = exp_Info['ViewPoint_x']
         y_eyepoint = exp_Info['ViewPoint_y']
-        
+
         # warp for perspective correction
         if stimdict["pers.corr"][epoch] == 1:
             warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
-                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint], 
+                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
                                 flipHorizontal = False, flipVertical = False)
             warper.dist_cm = config.DISTANCE# debug_chris
             warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
@@ -536,66 +564,66 @@ def main(path_stimfile):
         else:
             warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
         # Reset epoch timer
-        duration_clock = global_clock.getTime()  
+        duration_clock = global_clock.getTime()
         try:
-                    
+
             # Functions that draw the different stimuli
             if stimdict["stimtype"][epoch] == "stripe(s)":
-                
+
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.flashing_stripes(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
-                                                                
+
             elif stimdict["stimtype"][epoch][-6:]== "circle":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
-            
+
             elif stimdict["stimtype"][epoch] == "driftingstripe":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
-                    
-            
+
+
             elif stimdict["stimtype"][epoch] == "noise":
-                    
+
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
-                
+
             elif stimdict["stimtype"][epoch][-7:] == "grating":
-                    
+
                 (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
-                
+
             elif stimdict["stimtype"][epoch] == "dottygrating":
-                    
+
                 (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch][0],stim_object_ls[epoch][1],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
-            
-            
+
+
             else: raise StimulusError(stimdict["stimtype"][epoch],epoch)
-            
+
             # Irregular stop conditions:
-            # "and not stimdict["MAXRUNTIME"]==0" is an quick fix to test stim 
+            # "and not stimdict["MAXRUNTIME"]==0" is an quick fix to test stim
             # on dlp without mic. Important for SEARCH Stimulus
-            if (dlp.OK and (global_clock.getTime() - lastDataFrameStartTime > 1) 
+            if (dlp.OK and (global_clock.getTime() - lastDataFrameStartTime > 1)
                 and not stimdict["MAXRUNTIME"]==0):
                 raise MicroscopeException(lastDataFrame,lastDataFrameStartTime,global_clock.getTime())
-            elif (dlp.OK and (global_clock.getTime() >= stimdict["MAXRUNTIME"]) 
+            elif (dlp.OK and (global_clock.getTime() >= stimdict["MAXRUNTIME"])
                   and not stimdict["MAXRUNTIME"]==0):
                 raise StimulusTimeExceededException(stimdict["MAXRUNTIME"],global_clock.getTime())
             elif (global_clock.getTime() >= MAXRUNTIME) and not stimdict["MAXRUNTIME"]==0:
                 raise GlobalTimeExceededException(MAXRUNTIME,global_clock.getTime())
-                
-        # Real Errors      
+
+        # Real Errors
         except StimulusError as e:
             print ('Stimulus function could not be executed. Stimtype:', e.type)
             print ('At epoch:', e.epoch)
             raise
         except daq.DAQError as err:
             print ("DAQmx Error: %s"%err)
-        # Irregular stop conditions:   
+        # Irregular stop conditions:
         except MicroscopeException or StimulusTimeExceededException or GlobalTimeExceededException as e:
-            pass 
+            pass
             print ("A stop condition became true: " )
             print ("Time of %s was exceeded by current time %s at microscope frame %s. Maybe better use testmode (no DLP)?" %(e.spec_time,e.time,e.frame))
             print (e)
@@ -605,40 +633,40 @@ def main(path_stimfile):
             print ("Stopped experiment manually")
              # fake key-press to stop experiments through event listener
             event._onPygletKey(key.END,key.MOD_CTRL)
-            
-    
-    # ## 
+
+
+    # ##
     # #Uncomment the following if you would like to save the stimulation as a movie in your PC.
     # #Not recomended for usual recordings but just for examples of short duration
     ##Saving movie frames
-    #win.saveMovieFrames('G:\\SebastianFilesExternalDrive\\Science\\PhDAGSilies\\2pData Python_data\\0. Stim gif files\\Record_Gratings_sine_5MC_white_noise_30sw_30deg_sec_1hz_3sec_DARK_3sec_moving_8_to_0.0625_48sec.gif')   
-    
-##############################################################################    
+    #win.saveMovieFrames('G:\\SebastianFilesExternalDrive\\Science\\PhDAGSilies\\2pData Python_data\\0. Stim gif files\\Record_Gratings_sine_5MC_white_noise_30sw_30deg_sec_1hz_3sec_DARK_3sec_moving_8_to_0.0625_48sec.gif')
+
+##############################################################################
     # Save data
     outFile.close()
     save_main_setup(config.OUT_DIR)
     out.save_outfile(config.OUT_DIR)
-    
+
     # DAQmx Stop Code
     if counterTaskHandle:
         clearTask(counterTaskHandle)
     if counterTaskHandle:
         clearTask(pulseTaskHandle)
-        
-    # Stop 
+
+    # Stop
     print ("Write out ... close ...")
     win.close()
     core.quit()
 
-     
-    
+
+
 def clearTask(taskHandle):
     """
     Clears a task from the card.
     """
     daq.DAQmxStopTask(taskHandle)
     daq.DAQmxClearTask(taskHandle)
- 
+
 if __name__ == "__main__":
     main()
 
