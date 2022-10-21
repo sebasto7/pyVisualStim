@@ -5,11 +5,11 @@ from __future__ import division
 from collections import defaultdict
 
 from exceptions import MicroscopeException, StimulusTimeExceededException, GlobalTimeExceededException
-import PyDAQmx as daq
+#import PyDAQmx as daq temporarily comented
 import numpy
 import datetime
 import config
-
+from psychopy import visual
 
 
 
@@ -82,7 +82,7 @@ class Output(object):
     
         outfile_temp_name = "%s\\%s.txt" %(location,config.OUTFILE_NAME)
         outFile_temp = open(outfile_temp_name, 'w')
-        expInfo = '%s %s %s\n' % (exp_Info["ExpName"],exp_Info["User"],exp_Info["Subject #"] )
+        expInfo = '%s %s \n' % (exp_Info["ExpName"],exp_Info["User"])#exp_Info["Subject #"]
         stimfile = '%s\n' % (path_stimfile)
         outFile_temp.write(expInfo)
         outFile_temp.write(stimfile)
@@ -581,3 +581,15 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
     return ypos
 
 
+def subwindow(win,size=1,shape=[(-0.5,-1), (0.5, -1), (0.5, 0), (-0.5, 0)]):
+
+    """ creates a restricted area inside the visual.window instance
+        the stimulus is visible only under the inclusion area defined by shape"""
+
+    """ input: 
+                win: psychopy.visual.window instance 
+                size: size
+                shape: corners of a polygon defining the position of the included area"""
+    
+    aperture = visual.Aperture(win, size=1, shape=shape)  # try shape='square'
+    aperture.enabled=True

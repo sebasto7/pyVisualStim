@@ -7,6 +7,8 @@ import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
 from matplotlib import pyplot as plt # For some checks
+import sys
+sys.path.insert(0, r'U:\Dokumente\GitHub\pyVisualStim')
 import  stimuli
 from helper import *
 from exceptions import *
@@ -23,7 +25,7 @@ import datetime
 import time
 
 #%%
-def main(path_stimfile):
+def main(path_stimfile,subwindow=False):
     """
         This function handles the window,logging, nidaq and played stimulus ...
 
@@ -64,7 +66,7 @@ def main(path_stimfile):
 
     # Store info about the experiment session
     exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject_ID': '001',
-                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical'
+                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical',
                 'Screen_mask': 1}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
@@ -125,7 +127,7 @@ def main(path_stimfile):
                             size = [_width,_height], viewScale = [1,1],
                             pos = [_xpos,_ypos], screen = 1,
                             color=[-1,-1,-1],useFBO = True,allowGUI=False,
-                            viewOri = 0.0)
+                            viewOri = 0.0,allowStencil=True)
         # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
         # viewOri to compensate for the tilt of the projector.
         # If screen is already being tilted by Windows settings, set to 0.0 (deg)
@@ -142,7 +144,7 @@ def main(path_stimfile):
 
         #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
-                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
+                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0,allowStencil=True)
 
     # Other screen parameters (In the App, they are set in the "Monitor Center")
     #win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
@@ -185,7 +187,7 @@ def main(path_stimfile):
 # Creating a general screen mask for fitting a big screen into a smaller one #
 ##############################################################################
 
-if exp_Info['Screen_mask']:
+    if exp_Info['Screen_mask']:
     # TODO: make the ['x_position','y_position'] and ['width','height'] values based on percentage of the screen to mask
     # Eg. Width and height: (percentage to multiple to the total screen width (in degrees))
     #   Upper rectangle: [100%, 50%]
@@ -196,20 +198,25 @@ if exp_Info['Screen_mask']:
     #   Upper rectangle: [0, +50%]
     #   Lateral rectangles: [-12,5%, 0], [+12,5%, 0]
 
-    masks_pos =[['x','y'],['x','y'],['x','y']] #Fill in: center location for each rectangular mask (in degrees)
-    mask_size = [['width','height'],['width','height'],['width','height']] #Fill in: size for each rectangular mask  (in degrees)
-    rect_masks = []
-    for i in range(len(mask_size)):
-        screen_mask = visual.Rect(win, pos = masks_pos[i], size = masks_size[i], lineWidth=0)
-        rect_masks.append(screen_mask)
+        masks_pos =[[-_width/8,-_height/4],[_width/2,_height/4],[_width/8,-_height/4]] #Fill in: center location for each rectangular mask (in degrees)
+        mask_size = [[_width/4,_height/2],[_width,_height/2],[_width/4,_height/2]] #Fill in: size for each rectangular mask  (in degrees) 'width','height'
+        rect_masks = []
+        for i in range(len(mask_size)):
+            screen_mask = visual.Rect(win, pos = masks_pos[i], size = mask_size[i], lineWidth=0)
+            rect_masks.append(screen_mask)
 
     # The screen-shot is a single collage image composed of static elements that you can treat as being a single stimulus.
     # The screen-shot can be of the visible screen (front buffer) or hidden (back buffer).
     # BufferImageStim aims to provide fast rendering, while still allowing dynamic orientation, position, and opacity.
     # It’s fast to draw but slower to init (same as an ImageStim).
-    rect_buffer = visual.BufferImageStim(win, buffer='back', stim=rect_masks, sqPower2=False,
+    rect_buffer = visual.BufferImageStim(win, buffer='front', stim=rect_masks, sqPower2=False,
                     interpolate=False, name='rect-buffer', autoLog=True)
 
+############# alternative to creating a mask to delimitate the area of stimulus: ###########
+############### create a common vector for position and size ####################
+
+    stim_pos = [0,-_height/4] #Fill in: center location for each rectangular mask (in degrees)
+    stim_size = [_width/2,_height/2]
 
 ##############################################################################
 ######### Creating some attributes per epoch (Stimulus object, bg, fg)########
@@ -359,6 +366,7 @@ if exp_Info['Screen_mask']:
 
     # Creating the stimulus object per epoch
     stim_object_ls = list()
+    #overlay_masks =list()
     for i,stimtype in enumerate(stimdict["stimtype"]):
         if stimdict["pers.corr"][i] == 1:
             _units = 'deg' # Keep in "deg" when using the warper.
@@ -369,19 +377,19 @@ if exp_Info['Screen_mask']:
             _units = 'degFlatPos'
 
         if stimtype[-6:] == "circle":
-            circle = visual.Circle(win, units=_units, edges = 128)
+            circle = visual.Circle(win, units=_units, edges = 128)# pos=stim_pos,size=stim_size[0]#
             stim_object = circle
 
         elif stimtype ==  "stripe(s)":
-            bar = visual.Rect(win, lineWidth=0, units=_units)
+            bar = visual.Rect(win, lineWidth=0, units=_units,pos=stim_pos,size=stim_size)
             stim_object = bar
 
         elif stimtype ==  "driftingstripe":
-            bar = visual.Rect(win, lineWidth=0, units=_units)
+            bar = visual.Rect(win, lineWidth=0, units=_units,pos=stim_pos,size=stim_size)
             stim_object = bar
 
         elif stimtype == "noise":
-            noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')
+            noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr',pos=stim_pos,size=stim_size)
             stim_object = noise
 
         elif stimtype[-7:] == "grating":
@@ -389,7 +397,7 @@ if exp_Info['Screen_mask']:
                                          tex='sqr',colorSpace='rgb',
                                          blendmode='avg',texRes=128,
                                          interpolate=True, depth=-1.0,
-                                         phase = (0,0))
+                                         phase = (0,0),pos=stim_pos,size=stim_size)
             # noise = visual.NoiseStim(win,units=_units, name='noise',
             #                          colorSpace='rgb',noiseType='Binary',
             #                          noiseElementSize=0.0625,noiseBaseSf=8.0,
@@ -415,7 +423,17 @@ if exp_Info['Screen_mask']:
                                   opacity=1, depth=-1.0)
             stim_object =[grating,dots]
 
+        ########Juan test_ create the BufferImage Stimwith the stim_object############
+
+        #overlay_mask = visual.BufferImageStim(win, buffer='front', stim=[stim_object], sqPower2=False,
+        #            interpolate=False, name='rect-buffer', autoLog=True)
+        ######## end of test #######################
+        
+        
+        
         stim_object_ls.append(stim_object)
+        #overlay_masks.append(overlay_mask)
+
 
 
     # Creating backgroung (bg) and foreground (fg) colors  per epoch
@@ -531,6 +549,17 @@ if exp_Info['Screen_mask']:
     time.sleep(5)
     print('Stimulus started')
 
+    #######Juan mod######
+    ###### implement an aperture ##########
+    if subwindow==True:
+        vertices=[(-0.5,-1), (0.5, -1), (0.5, 0), (-0.5, 0)]
+        aperture = visual.Aperture(win, size=1, shape=vertices)  # try shape='square'
+        aperture.enabled=True
+        
+    #################
+
+    ######################################
+
     # Main Loop: dit diplays the stimulus unless:
         # keyboard key is pressed (manual stop)
         # stop condition becomse "True"
@@ -567,7 +596,7 @@ if exp_Info['Screen_mask']:
         duration_clock = global_clock.getTime()
         try:
 
-            # Functions that draw the different stimuli
+            # Functions that draw the different stimuli #put mask here
             if stimdict["stimtype"][epoch] == "stripe(s)":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.flashing_stripes(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,

@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.insert(0, r'\\fs02\smolina$\Dokumente\GitHub\pyVisualStim\pyVisualStim') # It must be change for the path where the code is in each PC
+sys.path.insert(0, r'C:\Users\vargasju\PhD\experiments\2p\Juan_stimuli') # It must be change for the path where the code is in each PC
+sys.path.insert(0, r'U:\Dokumente\GitHub\pyVisualStim\modules') 
 
-import pyVisualStim
+
+import modules
 from psychopy import gui
 
 file_path = gui.fileOpenDlg('./pyVisualStim/stimuli')
 
 # Execute
-pyVisualStim.main(file_path[0])
+modules.main(file_path[0],subwindow=True)
 
 

@@ -14,7 +14,7 @@ from psychopy.visual.windowwarp import Warper
 from exceptions import StopExperiment, MicroscopeException, StimulusTimeExceededException, GlobalTimeExceededException
 from matplotlib import pyplot as plt # For some checks
 import pyglet.gl as GL
-import PyDAQmx as daq
+#import PyDAQmx as daq
 import numpy as np
 import config
 import copy
@@ -46,14 +46,24 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
     # Print temporary
     print(f'Screen width from config: {win.scrWidthCM}')
     print(f'Distance to screen from config: {win.scrDistCM}')
-       
+
+    #circle radious
+    circle.radius= circle.radius= stimdict["radius"][epoch]
+    #temporal
+    #circle.radius=5
+
+    ############# commented by juan ###################
+    # #################################################  
     # circle attributes
-    circle.radius= stimdict["radius"][epoch]
-    try:
-        circle.pos = (stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]) 
-    except:
-        print('circle in 0,0 coordinates')
-        circle.pos = (0,0) 
+    # circle.radius= stimdict["radius"][epoch]
+    # try:
+    #     circle.pos = (stimdict['pos.x'][epoch],stimdict['pos.y'][epoch]) 
+    # except:
+    #     print('circle in 0,0 coordinates')
+    #     circle.pos = (0,0) 
+
+    ############### end_of comment######################
+    ####################################################
 
     # set timing
     tau = stimdict["tau"][epoch]
@@ -112,8 +122,7 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
         # fast break on key (ESC) pressed
         if len(event.getKeys(['escape'])):
             raise StopExperiment
-            
-        # As long as tau, draw BACKGROUND (> sign direction)
+
         if global_clock.getTime()-duration_clock >= tau:
             # circle attributes for drawing fg
             if stimdict["stimtype"][epoch] == 'noisy_circle':
@@ -124,6 +133,9 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
                 circle.fillColor = fg_ls[epoch]
                 circle.lineColor= fg_ls[epoch]
                 circle.radius= stimdict["radius"][epoch]
+            # if mask!=None:
+            #     mask.draw() # draws a mask overlayed on the stimulus. the mask has to be provided as input as a rect_buffer object
+
             circle.draw()
             
             
@@ -209,7 +221,8 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
 
         if len(event.getKeys(['escape'])):
             raise StopExperiment
-                 
+
+
         if counter[0] < bar_duration:
             if stimdict["bar.orientation"][epoch] == 0:
                 bar.pos = [positions[counter[1]], 0]
@@ -322,6 +335,7 @@ def drifting_stripe(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_
         if len(event.getKeys(['escape'])):
             raise StopExperiment
         
+
         #Resetting sisters bar possition for next frame
         if reset_bar_position: # event avoided for first iteration (frame)
             if bar.ori == 0:
@@ -373,6 +387,7 @@ def drifting_stripe(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_
                         bar.pos += (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
                     elif direction == "left": # For bars moving to the left along the x-axis
                         bar.pos -= (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
+
                 bar.draw()
         # store Output
         out.tcurr = global_clock.getTime()
@@ -434,7 +449,6 @@ def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duratio
         for frameN in range(tex_duration):
             if len(event.getKeys(['escape'])):
                 raise StopExperiment
-                
             #Geeting RGB values for the texture    
             rgb_t = numpy.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = -1 # All R value to -1
@@ -540,6 +554,7 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
     for frameN in range(duration):
             if len(event.getKeys(['escape'])):
                 raise StopExperiment
+
             # noise.draw()   #The noise object is currently NOT IN USE
             if _useNoise:
                 # Adding noise to the original signal
