@@ -1,4 +1,4 @@
 from .main import main
-from helper import *
+from modules.helper import *
 
 

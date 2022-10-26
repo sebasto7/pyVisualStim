@@ -4,10 +4,10 @@ STIMULUSDATA	NULL
 Stimulus.stimtype			driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe			
 Stimulus.bg		    		1			1			1			1			1			1			1			1
 Stimulus.fg				0			0			0			0			0			0			0			0
-Stimulus.duration			11.3			11.3			11.3			11.3			16.9			16.9			16.9			16.9	
+Stimulus.duration			7.37			7.37			7.37			7.37			10			10			10			10	
 Stimulus.velocity			20			20			20			20			20			20			20			20
 Stimulus.direction		-1			1			-1			1			-1			1			-1			1
-Stimulus.bar.width  		112.62		112.62		112.62		112.62		129.58		129.58		129.58		129.58	
+Stimulus.bar.width  		73.73			73.73			73.73			73.73			90			90			90			90	
 Stimulus.bar.height 		112.62		112.62		112.62		112.62		1120.62		1120.62		1120.62		1120.62
 Stimulus.bar.orientation    	0			0			90			90			45			45			135			135	
 Stimulus.tau			0			0			0			0			0			0			0			0	

@@ -7,9 +7,6 @@ import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
 from matplotlib import pyplot as plt # For some checks
-import  stimuli
-from helper import *
-from exceptions import *
 import PyDAQmx as daq
 # The PyDAQmx module is a full interface to the NIDAQmx ANSI C driver.
 # It imports all the functions from the driver and imports all the predefined
@@ -17,10 +14,14 @@ import PyDAQmx as daq
 # This provides an almost one-to-one match between C and Python code
 import pyglet.window.key as key
 import numpy as np
-import config
 import h5py
 import datetime
 import time
+
+from modules.helper import *
+from modules.exceptions import *
+from modules import config
+from  modules import stimuli
 
 #%%
 def main(path_stimfile):
@@ -64,8 +65,8 @@ def main(path_stimfile):
 
     # Store info about the experiment session
     exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject_ID': '001',
-                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical'
-                'Screen_mask': 1}
+                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical',
+                'Wins_as_masks': 1}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
@@ -75,10 +76,10 @@ def main(path_stimfile):
     exp_Info['date'] = "%d_%d_%d_%d_%d_%d.txt" %(_time.year,_time.month,
                                                 _time.day,_time.hour,
                                                 _time.minute,_time.second)
+
     exp_Info['psychopyVersion'] = psychopy.__version__
     exp_Info['frameRate'] = config.FRAMERATE
-    exp_Info['distanceScreen'] = config.DISTANCE
-    exp_Info['screenWidth'] = config.SCREEN_WIDTH
+    exp_Info['distanceScreen'], exp_Info['screenWidth'] = config.DISTANCE, config.SCREEN_WIDTH
 
 
  ##############################################################################
@@ -89,8 +90,7 @@ def main(path_stimfile):
     outFile = out.create_outfile_temp(config.OUT_DIR,path_stimfile,exp_Info)
 
     # Read coonfig settings
-    MAXRUNTIME = config.MAXRUNTIME
-    framerate = config.FRAMERATE;
+    MAXRUNTIME, framerate = config.MAXRUNTIME, config.FRAMERATE
     fname = path_stimfile
     current_index = 0
     epoch = 0 #First epoch of the stimulus file
@@ -102,10 +102,8 @@ def main(path_stimfile):
 
     # Read Viewpositions
     viewpos = Viewpositions(config.VIEWPOS_FILE)
-    _width = viewpos.width[0]
-    _height = viewpos.height[0]
-    _xpos = viewpos.x[0]
-    _ypos = viewpos.y[0]
+    _width, _height = viewpos.width[0], viewpos.height[0]
+    _xpos, _ypos = viewpos.x[0], viewpos.y[0]
 
 ##############################################################################
 ############### Creating the window where to draw your screen ################
@@ -118,31 +116,34 @@ def main(path_stimfile):
     # some fancy transforms on the whole window when we then flip()
 
     #Initializing the window as a dark screen (color=[-1,-1,-1])
-    if dlp.OK:
-        #Using the projector
+    if dlp.OK: #Using the projector
         #mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor='dlp',
-                            size = [_width,_height], viewScale = [1,1],
-                            pos = [_xpos,_ypos], screen = 1,
-                            color=[-1,-1,-1],useFBO = True,allowGUI=False,
-                            viewOri = 0.0)
+                        size = [_width,_height], viewScale = [1,1],
+                        pos = [_xpos,_ypos], screen = 1,
+                        color=[-1,-1,-1],useFBO = True,allowGUI=False,
+                        viewOri = 0.0)
+
+        if exp_Info['Wins_as_masks']: # Creating more than one screen to mask the main one
+            win_mask_ls = window_3masks(win, _monitor='dlp')
+
         # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
         # viewOri to compensate for the tilt of the projector.
         # If screen is already being tilted by Windows settings, set to 0.0 (deg)
 
-    else:
-        #In test mode on the PC screen
-        _width = 325 # should generate a window be of size = 9cm
-        _height = 325 # should generate a window be of size = 9cm
+    else: #In test mode on the PC screen
+        _width,_height = 325, 325 # window size = 9cm in  my ASUS VG248 monitor
+        _width,_height = 1920, 1080 # Full size in my ASUS VG248 monitor
+        _width,_height = 1000, 1000 # window size = 18cm in  my Lenovo laptop
 
-        _width = 1920 # Full size in my ASUS VG248 monitor
-        _height = 1080 # Full size in my ASUS VG248 monitor
-        _width = 800 # Full size in my ASUS VG248 monitor
-        _height = 800 # Full size in my ASUS VG248 monitor
-
-        #mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor='testMonitor',size = [_width,_height], screen = 0,
-                            allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
+                    allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
+
+        if exp_Info['Wins_as_masks']: # Creating more than one screen to mask the main one
+            win_mask_ls = window_3masks(win,_monitor='testMonitor')
+
+
+
 
     # Other screen parameters (In the App, they are set in the "Monitor Center")
     #win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
@@ -180,35 +181,6 @@ def main(path_stimfile):
             shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
         except:
             shuffle_index = shuffle_epochs(stimdict["randomize"][0],stimdict["EPOCHS"]) # Seb, temp line for old stimuli design
-
-##############################################################################
-# Creating a general screen mask for fitting a big screen into a smaller one #
-##############################################################################
-
-if exp_Info['Screen_mask']:
-    # TODO: make the ['x_position','y_position'] and ['width','height'] values based on percentage of the screen to mask
-    # Eg. Width and height: (percentage to multiple to the total screen width (in degrees))
-    #   Upper rectangle: [100%, 50%]
-    #   Lateral rectangles: [25%, 100%]
-    #For x and y position is different since the centre is (0,0) and then goes to positive and negative degrees in X and Y
-    #Meaning, for a 80 deg screen, it goes from (+40 to -40)
-    # Eg. x_position and y_position: (remember that the position is where to draw the center od the rectangle)
-    #   Upper rectangle: [0, +50%]
-    #   Lateral rectangles: [-12,5%, 0], [+12,5%, 0]
-
-    masks_pos =[['x','y'],['x','y'],['x','y']] #Fill in: center location for each rectangular mask (in degrees)
-    mask_size = [['width','height'],['width','height'],['width','height']] #Fill in: size for each rectangular mask  (in degrees)
-    rect_masks = []
-    for i in range(len(mask_size)):
-        screen_mask = visual.Rect(win, pos = masks_pos[i], size = masks_size[i], lineWidth=0)
-        rect_masks.append(screen_mask)
-
-    # The screen-shot is a single collage image composed of static elements that you can treat as being a single stimulus.
-    # The screen-shot can be of the visible screen (front buffer) or hidden (back buffer).
-    # BufferImageStim aims to provide fast rendering, while still allowing dynamic orientation, position, and opacity.
-    # It’s fast to draw but slower to init (same as an ImageStim).
-    rect_buffer = visual.BufferImageStim(win, buffer='back', stim=rect_masks, sqPower2=False,
-                    interpolate=False, name='rect-buffer', autoLog=True)
 
 
 ##############################################################################
@@ -580,7 +552,7 @@ if exp_Info['Screen_mask']:
 
             elif stimdict["stimtype"][epoch] == "driftingstripe":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
 
