@@ -64,3 +64,7 @@ SEED = 54378  # To keep reproducibility among experiments >> DO NOT CHANGE this 
 COUNTER_CHANNEL = "Dev1/ctr1" # or "Dev2/ctr1"
 PULSE_CHANNEL = "Dev1/ctr0"  #or "Dev2/ctr0". Consider using not a counter but digital mode 'port1/line0' (digital channel)
 MAXRATE = 10000.0 # Seb, currently unused
+
+# For monitor gamma calibration:
+LUM_INPUTS =   [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0] # Psychopy units, range 0:1
+LUM_MEASURED = [0, 0.05, 0.05,0.05,0.13,0.23,0.35,0.53,0.73,0.9,0.98] # Any units
