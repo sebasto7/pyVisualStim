@@ -65,6 +65,9 @@ COUNTER_CHANNEL = "Dev1/ctr1" # or "Dev2/ctr1"
 PULSE_CHANNEL = "Dev1/ctr0"  #or "Dev2/ctr0". Consider using not a counter but digital mode 'port1/line0' (digital channel)
 MAXRATE = 10000.0 # Seb, currently unused
 
-# For monitor gamma calibration:
+# For monitor color and luminance calibration:
 LUM_INPUTS =   [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0] # Psychopy units, range 0:1
 LUM_MEASURED = [0, 0.05, 0.05,0.05,0.13,0.23,0.35,0.53,0.73,0.9,0.98] # Any units
+LUM_MEASURED = [0.03, 0.05, 0.05,0.07,0.08,0.11,0.12,0.15,0.17,0.20,0.23] # Any units
+GAMMA_LS = [1,1,1] # Gamma for each channel [R,G,B]
+COLOR_ON = [0,0,1] # 1 or 0 for [R,G,B]

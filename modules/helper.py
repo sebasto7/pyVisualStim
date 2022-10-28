@@ -332,9 +332,10 @@ def set_bgcol(lum,con):
     bgcol = lum*(1-con)
 
     background = [0]*3
-    background[0] = 0.0 *2-1 # the *2-1 part converts the color space [0,1] -> [-1,1]
-    background[1] = get_dlpcol(bgcol,'G')*2-1
-    background[2] = get_dlpcol(bgcol,'B')*2-1
+    # the *2-1 part converts the color space [0,1] -> [-1,1]
+    background[0] = (get_dlpcol(bgcol,'R')* config.COLOR_ON[0])*2-1
+    background[1] = (get_dlpcol(bgcol,'G')* config.COLOR_ON[1])*2-1
+    background[2] = (get_dlpcol(bgcol,'B')* config.COLOR_ON[2])*2-1
 
 
     return background
@@ -359,9 +360,10 @@ def set_fgcol(lum,con):
     fgcol = lum*(1+con)
 
     foreground = [0]*3
-    foreground[0] = 0.0 *2-1 # the *2-1 part converts the color space [0,1] -> [-1,1]
-    foreground[1] = get_dlpcol(fgcol,'G')*2-1
-    foreground[2] = get_dlpcol(fgcol,'B')*2-1
+    # the *2-1 part converts the color space [0,1] -> [-1,1]
+    foreground[0] = (get_dlpcol(fgcol,'R')* config.COLOR_ON[0])*2-1
+    foreground[1] = (get_dlpcol(fgcol,'G')* config.COLOR_ON[1])*2-1
+    foreground[2] = (get_dlpcol(fgcol,'B')* config.COLOR_ON[2])*2-1
 
 
     return foreground
@@ -376,10 +378,10 @@ def set_intensity(epoch,value):
     """
 
     intensity = [0] * 3
-
-    intensity[0] = 0.0 * 2 - 1  # the *2-1 part converts the color space [0,1] -> [-1,1]
-    intensity[1] = 0.0 * 2 - 1  # the *2-1 part converts the color space [0,1] -> [-1,1] , before get_dlpcol(value, 'G') * 2 - 1
-    intensity[2] = get_dlpcol(value, 'B') * 2 - 1
+    # the *2-1 part converts the color space [0,1] -> [-1,1]
+    intensity[0] = (get_dlpcol(value,'R')* config.COLOR_ON[0])*2-1
+    intensity[1] = (get_dlpcol(value,'G')* config.COLOR_ON[1])*2-1
+    intensity[2] = (get_dlpcol(value,'B')* config.COLOR_ON[2])*2-1
 
     return intensity
 
@@ -399,31 +401,33 @@ def get_dlpcol(DLPintensity,channel):
     """
 
     # Some fixed - measured variables
-    gamma_gr = 0.9872   # LightCrafter 4500, 6 bit depth, measurements 140508
-    scale_gr = 1.0340
-    gamma_bl = 1        # blue values are dummy values
-    scale_bl = 1
+    gamma_r = config.GAMMA_LS[0] 
+    scale_r = 1
+    gamma_g = config.GAMMA_LS[1] 
+    scale_g = 1
+    gamma_b = config.GAMMA_LS[2]        
+    scale_b = 1
 
     temp = 0
-
-    # if channel == 'G':
-    #     temp = pow(DLPintensity/scale_gr , 1/gamma_gr) # Seb, commented 2022.06.07
-
-    if channel == 'B':
-        temp = pow(DLPintensity/scale_bl, 1/gamma_bl)
-
+    # Applying the inverse of the current gamma
+    if channel == 'R':
+        temp = pow(DLPintensity/scale_r, 1/gamma_r)
+    elif channel == 'G':
+        temp = pow(DLPintensity/scale_g, 1/gamma_g)
+    elif channel == 'B':
+        temp = pow(DLPintensity/scale_b, 1/gamma_b)
 
     # keep the output in the closed interval [0, 1]
     if temp > 1:
         temp = 1
-
     if temp < 0:
         temp = 0
 
 
     # temp = DLPintensity; # debug line to use if we want to turn off gamma correction
-    temp *= 63.0/255.0 # convert from 8 bit depth to 6 bit depth.
+    # temp *= 63.0/255.0 # convert from 8 bit depth to 6 bit depth.
     temp *= 255.0/255.0 # keep the 8 bit depth
+
 
     return temp
 
@@ -661,7 +665,7 @@ def set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,directio
     else:
         print('Bar orientation not compatible')
 
-    if exp_Info['Wins_as_masks']:
+    if exp_Info['WinMasks']:
         scr_width = scr_width/2
         #Recalculating only the maxhorang
         maxhorang = max_angle_from_center(scr_width, scr_distance)

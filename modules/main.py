@@ -66,7 +66,7 @@ def main(path_stimfile):
     # Store info about the experiment session
     exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject_ID': '001',
                 'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical',
-                'Wins_as_masks': 1}
+                'WinMasks': 1, 'CalibrateGamma_psychopy':0}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
@@ -117,27 +117,15 @@ def main(path_stimfile):
 
     #Initializing the window as a dark screen (color=[-1,-1,-1])
     if dlp.OK: #Using the projector
-        
-        #Gamma calibration
-        mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
-        print(f'Gamma before calibration: {mon.getGamma()}')
-        lum_measured = config.LUM_MEASURED
-        lum_inputs = config.LUM_INPUTS
-        gc = monitors.GammaCalculator(inputs=lum_inputs,lums=lum_measured,gamma=None, bitsIN=8, bitsOUT=8, eq=1)
-        mon.setGamma(1/gc.gamma)
-        print(f'Gamma after calibration: {mon.getGamma()}')
-        #invFun = monitors.gammaInvFun(lum_measured, minLum = lum_measured[0], maxLum=lum_measured[-1], gamma=gc.gamma, b=None, eq=1)
-        #gc.fitGammaFun(x=lum_inputs, y=lum_measured)
-        #Gamma_1_8 = [0.0, 0.01347256, 0.04926537, 0.10517905, 0.18014963,0.27346917, 0.38461024, 0.51315452, 0.65875661, 0.82112322,1.0]
-
         # Initializing screen
+        mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor=mon,
                         size = [_width,_height], viewScale = [1,1],
                         pos = [_xpos,_ypos], screen = 1,
                         color=[-1,-1,-1],useFBO = True,allowGUI=False,
                         viewOri = 0.0)
 
-        if exp_Info['Wins_as_masks']: # Creating more than one screen to mask the main one
+        if exp_Info['WinMasks']: # Creating more than one screen to mask the main one
             win_mask_ls = window_3masks(win, _monitor=mon)
 
         # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
@@ -153,9 +141,20 @@ def main(path_stimfile):
         win = visual.Window(monitor=mon,size = [_width,_height], screen = 0,
                     allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
 
-        if exp_Info['Wins_as_masks']: # Creating more than one screen to mask the main one
+        if exp_Info['WinMasks']: # Creating more than one screen to mask the main one
             win_mask_ls = window_3masks(win,_monitor=mon)
-
+    
+    # Gamma calibration
+    if exp_Info['CalibrateGamma_psychopy']:
+        print(f'Psychopy gamma before calibration: {mon.getGamma()}')
+        lum_measured = config.LUM_MEASURED
+        lum_inputs = config.LUM_INPUTS
+        gc = monitors.GammaCalculator(inputs=lum_inputs,lums=lum_measured,gamma=None, bitsIN=8, bitsOUT=8, eq=1)
+        mon.setGamma(1/gc.gamma) #Inverse gamma to undo gamma calibration of the monitor
+        print(f'Psychopy gamma after calibration: {mon.getGamma()}')
+        #invFun = monitors.gammaInvFun(lum_measured, minLum = lum_measured[0], maxLum=lum_measured[-1], gamma=gc.gamma, b=None, eq=1)
+        #gc.fitGammaFun(x=lum_inputs, y=lum_measured)
+        #Gamma_1_8 = [0.0, 0.01347256, 0.04926537, 0.10517905, 0.18014963,0.27346917, 0.38461024, 0.51315452, 0.65875661, 0.82112322,1.0]
 
 
 
