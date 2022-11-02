@@ -39,8 +39,9 @@
 
 import os
 
-# For user configuration
-MY_ID = 'seb'
+# For the current recording
+USER_ID = 'seb'
+SUBJECT_ID = '001'
 EXP_NAME = 'Input the experiment name'
 OUT_DIR = r'C:\Users\sebas\Desktop\temp_pyVisualStim_OutputFiles' #Hard coded path for every PC, must be put of any Github folder
 
@@ -52,8 +53,12 @@ OUTFILE_NAME = "_stimulus_output"
 FRAMERATE = 60# Check refresh rate of your screen (here, PC monitor or projector)
 DISTANCE = 6# Distance of the fly to the screen, For dlp 90deg: 5 cm, For ASUS monitor: 10, For dlp 45deg: ? (5.36?)
 SCREEN_WIDTH = 18 # Width of the window's projection area, For dlp 90deg: 12, For ASUS monitor: 30,  For dlp 45deg: ? (9?)
-print(os.getcwd())
 VIEWPOS_FILE = 'viewpositions.txt' # Contains window' size and position on the screen
+VIEWPOINT_X = 0.5
+VIEWPOINT_Y = 0.5
+WARP = 'spherical'
+WIN_MASK = 0
+
 
 
 # Other configurations

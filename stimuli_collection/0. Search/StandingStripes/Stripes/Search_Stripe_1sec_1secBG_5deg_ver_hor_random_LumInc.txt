@@ -1,6 +1,6 @@
 EPOCHS  2
 MAXRUNTIME  0
-STIMULUSDATAPATH    		NULL
+STIMULUSDATA    		NULL
 Stimulus.stimtype   		stripe	stripe
 Stimulus.bg		   	0.5	0.5
 Stimulus.fg	   		1	1
@@ -12,6 +12,7 @@ Stimulus.bar.orientation    	0	90
 Stimulus.bar.xmin   		-100	-100
 Stimulus.bar.xmax   		100	100
 Stimulus.bar.ymax   		100	100
+Stimulus.bar.ymin   		-100	-100
 Stimulus.bar.distance   	2.5	2.5
 Stimulus.pers.corr		1	1
 Stimulus.randomize  		0	0

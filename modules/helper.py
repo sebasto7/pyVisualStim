@@ -515,7 +515,7 @@ def position_x(stimdict, epoch, screen_width, distance, seed):
     xmin = stimdict["bar.xmin"][epoch]
     bar_distance = stimdict["bar.distance"][epoch]
 
-    hor_angle = max_horizontal_angle(screen_width, distance)
+    hor_angle =  max_angle_from_center(screen_width, distance)
     # hor_extent = abs(hor_angle - (stimdict["bar.width"][epoch]))
     hor_extent = abs(hor_angle)
 
@@ -554,10 +554,10 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
 
 
     ymax = stimdict["bar.ymax"][epoch]
-    ymin = (stimdict["bar.width"][epoch])
+    ymin = (stimdict["bar.ymin"][epoch])
     bar_distance = stimdict["bar.distance"][epoch]
 
-    ver_angle = max_vertical_angle(screen_width, distance)
+    ver_angle = max_angle_from_center(screen_width, distance)
     # ver_extent = abs(ver_angle - (stimdict["bar.width"][epoch]))
     ver_extent = abs(ver_angle)
 
@@ -571,7 +571,7 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
 
 
     else:
-        ver_angle = max_horizontal_angle(screen_width, distance) # Vertical extent will max how we calculate the horizontal extent
+        ver_angle = max_angle_from_center(screen_width, distance) # Vertical extent will max how we calculate the horizontal extent
         ver_extent = abs(ver_angle)
         ymin = -ver_extent
         ymax= ver_extent

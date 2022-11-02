@@ -179,6 +179,13 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
     win = window
     win.color= bg_ls[epoch] # Background for selected epoch
 
+    
+    win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
+    bar.fillColor = fg_ls[epoch]
+    bar.width = stimdict["bar.width"][epoch]
+    bar.height = stimdict["bar.height"][epoch]
+    bar.ori = stimdict["bar.orientation"][epoch]
+
     framerate = config.FRAMERATE
     scr_width = win.scrWidthCM
     scr_distance = win.scrDistCM
@@ -186,20 +193,36 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
     bar_duration = int(stimdict["bar.duration"][epoch] * framerate)
     bg_duration = int(stimdict["bg.duration"][epoch] * framerate)
 
-    if stimdict["bar.orientation"][epoch] == 0:
-        positions = position_x(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
-    elif stimdict["bar.orientation"][epoch] == 90:
-        positions = position_y(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+    # Multiple bars
+    bar_ls, space_ls = [], [] # Only implemented for vertical and horizontal bars (see bar.ori)
+    if stimdict["multiple"][epoch]:
+        init_pos  = stimdict["bar.initPos"][epoch]
+        print(f'Initial position at: {init_pos} ')
 
-    bar_no = len(positions)
-    epoch_duration = (bg_duration + bar_duration) * bar_no
+        bar_no = stimdict["bar.number"][epoch]
+        epoch_duration = int((bg_duration + bar_duration) * bar_no)
 
-    win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
+        # "bar.number"  and "bar.interSpace" attributes are present in only some stimuli
+        
+        bar_number = int(stimdict["bar.number"][epoch])
+        inter_space = stimdict["bar.interSpace"][epoch]
+        for i in range(bar_number):
+            bar_ls.append(bar)
+            space_ls.append(inter_space * i)
 
-    bar.fillColor = fg_ls[epoch]
-    bar.width = stimdict["bar.width"][epoch]
-    bar.height = stimdict["bar.height"][epoch]
-    bar.ori = stimdict["bar.orientation"][epoch]
+
+    else: #Single bar, random locations
+        print(f'Getting random positions')
+        if stimdict["bar.orientation"][epoch] == 0:
+            positions = position_x(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+        elif stimdict["bar.orientation"][epoch] == 90:
+         positions = position_y(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+        
+        bar_no = len(positions)
+        epoch_duration = (bg_duration + bar_duration) * bar_no
+        
+        bar_ls.append(bar)
+        space_ls.append(0.0)
 
 
     out.boutInd = 0 # Re initialize the boutInd (single bar flash) for every epoch

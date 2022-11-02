@@ -64,9 +64,9 @@ def main(path_stimfile):
         core.quit()  # user pressed cancel
 
     # Store info about the experiment session
-    exp_Info = {'ExpName': config.EXP_NAME,'User': config.MY_ID, 'Subject_ID': '001',
-                'ViewPoint_x': 0.5, 'ViewPoint_y':0.5, 'Warp': 'spherical',
-                'WinMasks': 1, 'CalibrateGamma_psychopy':0}
+    exp_Info = {'ExpName': config.EXP_NAME,'User': config.USER_ID, 'Subject_ID': config.SUBJECT_ID,
+                'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
+                'WinMasks': config.WIN_MASK, 'CalibrateGamma_psychopy':0}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
