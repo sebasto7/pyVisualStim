@@ -44,16 +44,12 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
     win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
     # win.color= bg_ls[0]
 
-    # Print temporary
-    print(f'Screen width from config: {win.scrWidthCM}')
-    print(f'Distance to screen from config: {win.scrDistCM}')
-
     # circle attributes
     circle.radius= stimdict["radius"][epoch]
     try:
         circle.pos = (stimdict['pos.x'][epoch],stimdict['pos.y'][epoch])
     except:
-        print('circle in 0,0 coordinates')
+        print('Circle in 0,0 coordinates')
         circle.pos = (0,0)
 
     # set timing
@@ -179,7 +175,7 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
     win = window
     win.color= bg_ls[epoch] # Background for selected epoch
 
-    
+
     win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
     bar.fillColor = fg_ls[epoch]
     bar.width = stimdict["bar.width"][epoch]
@@ -203,7 +199,7 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
         epoch_duration = int((bg_duration + bar_duration) * bar_no)
 
         # "bar.number"  and "bar.interSpace" attributes are present in only some stimuli
-        
+
         bar_number = int(stimdict["bar.number"][epoch])
         inter_space = stimdict["bar.interSpace"][epoch]
         for i in range(bar_number):
@@ -217,10 +213,10 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
             positions = position_x(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
         elif stimdict["bar.orientation"][epoch] == 90:
          positions = position_y(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
-        
+
         bar_no = len(positions)
         epoch_duration = (bg_duration + bar_duration) * bar_no
-        
+
         bar_ls.append(bar)
         space_ls.append(0.0)
 

@@ -57,11 +57,12 @@ class Output(object):
 
     def save_outfile(self,location):
         """
+        OLD, deprecated
         :param location: Location where files should be stored
         :type location: path
         """
         time = datetime.datetime.now()
-        outfile_name = "%s\\%s_%d_%d_%d_%d_%d_%d.txt" %(location,config.OUTFILE_NAME,time.year,time.month,time.day,time.hour,time.minute,time.second)
+        outfile_name = "%s\\%s_%d%d_%d.txt" %(location,config.OUTFILE_NAME,time.hour,time.minute,time.second)
 
         outfile_temp = "%s\\%s.txt" %(location,config.OUTFILE_NAME)
         with open(outfile_temp) as source:
@@ -79,8 +80,8 @@ class Output(object):
         :type path_stimfile: path
 
         """
-
-        outfile_temp_name = "%s\\%s.txt" %(location,config.OUTFILE_NAME)
+        time = datetime.datetime.now()
+        outfile_temp_name = "%s\\%s_%d%d_%d.txt" %(location,config.OUTFILE_NAME,time.hour,time.minute,time.second)
         outFile_temp = open(outfile_temp_name, 'w')
         expInfo = '%s %s %s\n' % (exp_Info["ExpName"],exp_Info["User"],exp_Info["Subject_ID"] )
         stimfile = '%s\n' % (path_stimfile)
@@ -142,27 +143,31 @@ class Stimulus(object):
         return dict
 
 
-def write_main_setup(location,dlp_ok,MAXRUNTIME):
+def write_main_setup(location,dlp_ok,MAXRUNTIME,exp_Info):
 
     """ Writes the meta_data file which logs global settings """
 
     # A temporary mainfile, containing data of last run
-    mainfile_name_temp = "%s\\%s.txt" %(location,config.MAINFILE_NAME)
+    time = datetime.datetime.now()
+    mainfile_name_temp = f"{location}\\{config.METAFILE_NAME}_{time.hour}{time.minute}_{time.second}.txt"
     mainfile_temp = open(mainfile_name_temp, 'w')
 
-    mainfile_temp.write("useDLP %d\n" % dlp_ok)
-    mainfile_temp.write("MAXRUNTIME %f\n" % MAXRUNTIME)
+    mainfile_temp.write("KEY,VALUE\n")
+    mainfile_temp.write("useDLP,%d\n" % dlp_ok)
+    mainfile_temp.write("MAXRUNTIME,%f\n" % round(MAXRUNTIME))
+    for key,value in exp_Info.items():
+        mainfile_temp.write(f"{key},{value}\n")
 
 def save_main_setup(location):
 
-    """ Copies the current meta_data file to a timestamped meta_data file.
+    """ OLD, deprecated. Copies the current meta_data file to a timestamped meta_data file.
     This is execution specific."""
 
     # A permanently saved mainfile copy with time stemp
     time = datetime.datetime.now()
     mainfile_name = "%s\\_meta_data_%d_%d_%d_%d_%d_%d.txt" %(location,time.year,time.month,time.day,time.hour,time.minute,time.second)
 
-    mainfile_temp = "%s\\%s.txt" %(location, config.MAINFILE_NAME)
+    mainfile_temp = f"{location}\\{config.METAFILE_NAME}_{time.hour}{time.minute}_{time.second}.txt"
     with open(mainfile_temp) as source:
         with open(mainfile_name, 'w') as dest:
             for line in source:
@@ -304,15 +309,18 @@ def choose_epoch(index,randomize,no_epochs,current_index):
     if randomize == 0.0 or randomize == 2.0:
         epochchoose = index.item((current_index,0))
         current_index = (current_index+1) % no_epochs
+        print('---------------------')
         print('Presented epoch: {}'.format(epochchoose))
 
     elif randomize == 1.0:
          # every 2nd epochchoose == 0
         if (current_index % 2) == 1:
             epochchoose = index.item(int((current_index-1)/2),0)
+            print('---------------------')
             print('Presented epoch: {}'.format(epochchoose))
         else:
             epochchoose = 0
+            print('---------------------')
             print('Presented epoch: {}'.format(epochchoose))
         current_index = (current_index+1) % (2*(no_epochs-1))
 
@@ -401,11 +409,11 @@ def get_dlpcol(DLPintensity,channel):
     """
 
     # Some fixed - measured variables
-    gamma_r = config.GAMMA_LS[0] 
+    gamma_r = config.GAMMA_LS[0]
     scale_r = 1
-    gamma_g = config.GAMMA_LS[1] 
+    gamma_g = config.GAMMA_LS[1]
     scale_g = 1
-    gamma_b = config.GAMMA_LS[2]        
+    gamma_b = config.GAMMA_LS[2]
     scale_b = 1
 
     temp = 0
@@ -425,8 +433,10 @@ def get_dlpcol(DLPintensity,channel):
 
 
     # temp = DLPintensity; # debug line to use if we want to turn off gamma correction
-    # temp *= 63.0/255.0 # convert from 8 bit depth to 6 bit depth.
-    temp *= 255.0/255.0 # keep the 8 bit depth
+    if config.MODE == 'patternMode':
+        temp *= 63.0/255.0 # convert from 8 bit depth to 6 bit depth.
+    else:
+        temp *= 255.0/255.0 # keep the 8 bit depth
 
 
     return temp

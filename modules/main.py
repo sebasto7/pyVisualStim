@@ -64,26 +64,31 @@ def main(path_stimfile):
         core.quit()  # user pressed cancel
 
     # Store info about the experiment session
-    exp_Info = {'ExpName': config.EXP_NAME,'User': config.USER_ID, 'Subject_ID': config.SUBJECT_ID,
+    exp_Info = {'ExpName': config.ID_DICT['EXP_NAME'],'User': config.ID_DICT['USER_ID'], 'Subject_ID': config.ID_DICT['SUBJECT_ID'],
                 'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
-                'WinMasks': config.WIN_MASK, 'CalibrateGamma_psychopy':0}
+                'WinMasks': config.WIN_MASK, 'CalibrateGamma_psychopy':0, 'Mode': config.MODE}
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
         core.quit()  # user pressed cancel
 
     _time = datetime.datetime.now()
-    exp_Info['date'] = "%d_%d_%d_%d_%d_%d.txt" %(_time.year,_time.month,
+    exp_Info['date'] = "%d%d%d_%d%d_%d" %(_time.year,_time.month,
                                                 _time.day,_time.hour,
                                                 _time.minute,_time.second)
 
     exp_Info['psychopyVersion'] = psychopy.__version__
-    exp_Info['frameRate'] = config.FRAMERATE
+    exp_Info['frameRate'] = round(config.FRAMERATE,2)
     exp_Info['distanceScreen'], exp_Info['screenWidth'] = config.DISTANCE, config.SCREEN_WIDTH
 
-
  ##############################################################################
-
+ #######################Settings for DLP Pattern Mode##########################
+ ##############################################################################
+    if exp_Info['Mode'] == 'patternMode':
+        _viewScale = [1,1/2]
+    else:
+        _viewScale = [1,1]
+ ##############################################################################
 
     # Create output file
     out = Output()
@@ -120,7 +125,7 @@ def main(path_stimfile):
         # Initializing screen
         mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor=mon,
-                        size = [_width,_height], viewScale = [1,1],
+                        size = [_width,_height], viewScale = _viewScale,
                         pos = [_xpos,_ypos], screen = 1,
                         color=[-1,-1,-1],useFBO = True,allowGUI=False,
                         viewOri = 0.0)
@@ -136,6 +141,7 @@ def main(path_stimfile):
         _width,_height = 325, 325 # window size = 9cm in  my ASUS VG248 monitor
         _width,_height = 1920, 1080 # Full size in my ASUS VG248 monitor
         _width,_height = 1000, 1000 # window size = 18cm in  my Lenovo laptop
+        _width,_height = 500, 500 # window size = 9cm in  my Lenovo laptop
 
         mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor=mon,size = [_width,_height], screen = 0,
@@ -143,7 +149,7 @@ def main(path_stimfile):
 
         if exp_Info['WinMasks']: # Creating more than one screen to mask the main one
             win_mask_ls = window_3masks(win,_monitor=mon)
-    
+
     # Gamma calibration
     if exp_Info['CalibrateGamma_psychopy']:
         print(f'Psychopy gamma before calibration: {mon.getGamma()}')
@@ -170,6 +176,16 @@ def main(path_stimfile):
     # logging.console.setLevel(logging.WARNING)
 
 ##############################################################################
+    #Printing screen info:
+    print('##############################################')
+    print('>>> Screen information:')
+    print(f'Screen name: {mon.name}')
+    print(f'Screen width: {config.SCREEN_WIDTH}')
+    print(f'Distance to screen: {config.DISTANCE}')
+    print(f'Covered visual angle: +- {round(max_angle_from_center(config.SCREEN_WIDTH, config.DISTANCE),2)}')
+    print('##############################################')
+
+##############################################################################
 
     # store frame rate of monitor if we can measure it
     exp_Info['frameRate'] = win.getActualFrameRate()
@@ -186,7 +202,7 @@ def main(path_stimfile):
 
 
     # Write main setup to file (metadata)
-    write_main_setup(config.OUT_DIR,dlp.OK,config.MAXRUNTIME)
+    write_main_setup(config.OUT_DIR,dlp.OK,config.MAXRUNTIME,exp_Info)
 
     # shuffle epochs newly, if start or every epoch has been displayed
     if current_index == 0:
@@ -515,6 +531,7 @@ def main(path_stimfile):
     print('5s pause...')
     time.sleep(5)
     print('Stimulus started')
+    print('##############################################')
 
     # Main Loop: dit diplays the stimulus unless:
         # keyboard key is pressed (manual stop)
@@ -615,6 +632,7 @@ def main(path_stimfile):
             stop = True
         # Manual stop from stimulus:
         except StopExperiment:
+            print('##############################################')
             print ("Stopped experiment manually")
              # fake key-press to stop experiments through event listener
             event._onPygletKey(key.END,key.MOD_CTRL)
@@ -629,8 +647,8 @@ def main(path_stimfile):
 ##############################################################################
     # Save data
     outFile.close()
-    save_main_setup(config.OUT_DIR)
-    out.save_outfile(config.OUT_DIR)
+    #save_main_setup(config.OUT_DIR) #OLD, deprecated
+    # out.save_outfile(config.OUT_DIR)#OLD, deprecated
 
     # DAQmx Stop Code
     if counterTaskHandle:
