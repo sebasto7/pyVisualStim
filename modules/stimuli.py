@@ -278,6 +278,7 @@ def flashing_stripes(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration
 def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile,out, bar,dlpOK, viewpos, data,taskHandle = None, lastDataFrame = 0, lastDataFrameStartTime = 0):
     """drifting_stripe:
     """
+    #print(f' FUNCTION STARTS: {global_clock.getTime()}')
     win = window
     win.color= bg_ls[epoch]  # Background for selected epoch
     bar.fillColor = fg_ls[epoch]
@@ -341,7 +342,6 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
                 elif direction == "left":
                     bar.pos[1] = bar.pos[1] - sum(space_ls)
 
-
         # As long as tau, draw BACKGROUND (> sign direction)
         if global_clock.getTime()-duration_clock >= tau:
 
@@ -396,6 +396,7 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
         reset_bar_position = True
         # #SavingMovieFrames
         # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+    #print(f'FUNCTION ENDS: {global_clock.getTime()}')
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 

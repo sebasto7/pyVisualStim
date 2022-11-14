@@ -104,6 +104,7 @@ def main(path_stimfile):
     # Read stimulus file
     stimulus = Stimulus(fname)
     stimdict = stimulus.dict
+    stimdict["PERSPECTIVE_CORRECTION"] = 1 #Temporary until changing all stimuli
 
     # Read Viewpositions
     viewpos = Viewpositions(config.VIEWPOS_FILE)
@@ -162,18 +163,37 @@ def main(path_stimfile):
         #gc.fitGammaFun(x=lum_inputs, y=lum_measured)
         #Gamma_1_8 = [0.0, 0.01347256, 0.04926537, 0.10517905, 0.18014963,0.27346917, 0.38461024, 0.51315452, 0.65875661, 0.82112322,1.0]
 
-
-
     # Other screen parameters (In the App, they are set in the "Monitor Center")
     #win.scrWidthCM = config.SCREEN_WIDTH # Width of the projection area of the screen
     #win.scrDistCM = config.DISTANCE # Distancefrom the viewer to the screen
-
 
     # #Detecting dropped frames if any
     # win.setRecordFrameIntervals(True)
     # # warn if frame is late more than 4 ms
     # win._refreshTreshold = 1/config.FRAMERATE+0.004
     # logging.console.setLevel(logging.WARNING)
+
+##############################################################################
+######################### Perspective correction #############################
+##############################################################################
+
+    # Subjects view perspective
+    x_eyepoint = exp_Info['ViewPoint_x']
+    y_eyepoint = exp_Info['ViewPoint_y']
+
+    test_clock = core.Clock()
+    #print(f'WARPER STARTS: {test_clock.getTime()+10}')
+    # warp for perspective correction
+    if stimdict["PERSPECTIVE_CORRECTION"]== 1:
+        warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
+                    warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
+                    flipHorizontal = False, flipVertical = False)
+        #warper.dist_cm = config.DISTANCE# debug_chris
+        #warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
+        #print(f'Warper eyepoints: {warper.eyepoint}')
+    else:
+        warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
+    #print(f'WARPER ENDS: {test_clock.getTime()+10}')
 
 ##############################################################################
     #Printing screen info:
@@ -193,8 +213,6 @@ def main(path_stimfile):
         frameDur = 1.0 / round(exp_Info['frameRate'])
     else:
         frameDur = 1.0 / 60.0  # could not measure, so guess
-
-
 
     # Forcing the MAXRUNTIME to be 0 in test mode
     if not dlp.OK:
@@ -537,6 +555,7 @@ def main(path_stimfile):
         # keyboard key is pressed (manual stop)
         # stop condition becomse "True"
     while not (len(event.getKeys()) > 0 or stop):
+        #print(f'WHILE LOOP STARTS: {global_clock.getTime()}')
 
         # choose next epoch
         try:
@@ -550,23 +569,9 @@ def main(path_stimfile):
         out.boutInd = out.boutInd + 1
         out.epochchoose = epoch
 
-        # Subjects view perspective
-
-        x_eyepoint = exp_Info['ViewPoint_x']
-        y_eyepoint = exp_Info['ViewPoint_y']
-
-        # warp for perspective correction
-        if stimdict["pers.corr"][epoch] == 1:
-            warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
-                                warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
-                                flipHorizontal = False, flipVertical = False)
-            warper.dist_cm = config.DISTANCE# debug_chris
-            warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
-            #print(f'Warper eyepoints: {warper.eyepoint}')
-        else:
-            warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
         # Reset epoch timer
         duration_clock = global_clock.getTime()
+        print(f'STIM SELECTION STARTS: {global_clock.getTime()}')
         try:
 
             # Functions that draw the different stimuli
@@ -581,7 +586,7 @@ def main(path_stimfile):
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch] == "driftingstripe":
-
+                #print(f'FUNCTION CALLED: {global_clock.getTime()}')
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
