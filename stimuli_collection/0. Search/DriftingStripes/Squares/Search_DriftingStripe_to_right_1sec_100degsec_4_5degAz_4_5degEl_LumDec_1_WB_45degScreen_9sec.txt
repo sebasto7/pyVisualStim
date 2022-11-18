@@ -1,6 +1,8 @@
-EPOCHS	9		
-MAXRUNTIME	0	
-STIMULUSDATA	NULL		
+EPOCHS			9		
+MAXRUNTIME			0	
+STIMULUSDATA		NULL
+RANDOMIZATION_MODE	0
+PERSPECTIVE_CORRECTION	1		
 Stimulus.stimtype			driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	driftingstripe	
 Stimulus.bg		    		0.5		0.5		0.5		0.5		0.5		0.5		0.5		0.5		0.5															
 Stimulus.fg				0		0		0		0		0		0		0		0		0																
@@ -11,6 +13,4 @@ Stimulus.bar.initPos		-40		-30		-20		-10		0		10		20		30		40
 Stimulus.bar.width  		4.5		4.5		4.5		4.5		4.5		4.5		4.5		4.5		4.5														
 Stimulus.bar.height 		4.5		4.5		4.5		4.5		4.5		4.5		4.5		4.5		4.5																	
 Stimulus.bar.orientation    	0		0		0		0		0		0		0		0		0															
-Stimulus.tau			0		0		0		0		0		0		0		0		0																	
-Stimulus.pers.corr		1		1		1		1		1		1		1		1		1															
-Stimulus.randomize		0		0		0		0		0		0		0		0		0																
+Stimulus.tau			0		0		0		0		0		0		0		0		0														

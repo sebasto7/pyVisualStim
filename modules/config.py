@@ -89,8 +89,8 @@ MAXRUNTIME = 3600
 SEED = 54378  # To keep reproducibility among experiments >> DO NOT CHANGE this SEED number: (54378, original from 2020)
 
 # For NIDAQ configuration
-COUNTER_CHANNEL = "Dev1/ctr1" # or "Dev2/ctr1"
-PULSE_CHANNEL = "Dev1/ctr0"  #or "Dev2/ctr0". Consider using not a counter but digital mode 'port1/line0' (digital channel)
+COUNTER_CHANNEL = "Dev2/ctr1" # or "Dev2/ctr1"
+PULSE_CHANNEL = "Dev2/ctr0"  #or "Dev2/ctr0". Consider using not a counter but digital mode 'port1/line0' (digital channel)
 MAXRATE = 10000.0 # Seb, currently unused
 
 # For monitor color and luminance calibration:

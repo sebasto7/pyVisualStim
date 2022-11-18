@@ -33,6 +33,11 @@ if __name__ == "__main__":
     globals()[sys.argv[1]](sys.argv[2]) # Makes possible to run the user() function and input the unser_name variable in the command line
     user()
 
+    # #For running from the terminal
+ 
+    #print("In the terminal write: python.py user <choose_user_name>")
+    #user("seb")
+
     
 
     

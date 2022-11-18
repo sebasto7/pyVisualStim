@@ -104,7 +104,32 @@ def main(path_stimfile):
     # Read stimulus file
     stimulus = Stimulus(fname)
     stimdict = stimulus.dict
-    stimdict["PERSPECTIVE_CORRECTION"] = 1 #Temporary until changing all stimuli
+    #stimdict["PERSPECTIVE_CORRECTION"] = 1 #Temporary until changing all stimuli
+
+    #Adjusting old stim names to new ones
+    for s, stimtype in enumerate(stimdict["stimtype"]):
+    # Functions that draw the different stimuli
+        if stimtype == "stripe(s)":
+            stimdict["stimtype"][s] = "SSR"
+
+        elif stimtype == "circle":
+            stimdict["stimtype"][s] = "C"
+
+        elif stimtype == "noisy_circle":
+            stimdict["stimtype"][s] = "NC"
+
+        elif stimtype == "driftingstripe":
+            stimdict["stimtype"][s] = "DS"
+
+
+        elif stimtype == "noise":
+            stimdict["stimtype"][s] = "N"
+
+        elif stimtype == "grating":
+            stimdict["stimtype"][s] = "G"
+
+        elif stimtype == "dottygrating":
+            stimdict["stimtype"][s] = "DG"
 
     # Read Viewpositions
     viewpos = Viewpositions(config.VIEWPOS_FILE)
@@ -185,6 +210,7 @@ def main(path_stimfile):
     #print(f'WARPER STARTS: {test_clock.getTime()+10}')
     # warp for perspective correction
     if stimdict["PERSPECTIVE_CORRECTION"]== 1:
+        print('PERSPECTIVE CORRECTION APPLIED')
         warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
                     warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
                     flipHorizontal = False, flipVertical = False)
@@ -225,7 +251,8 @@ def main(path_stimfile):
     # shuffle epochs newly, if start or every epoch has been displayed
     if current_index == 0:
         try:
-            shuffle_index = shuffle_epochs(stimdict["RANDOMIZE"],stimdict["EPOCHS"])
+            print(f'RANDOMIZATION_MODE: {stimdict["RANDOMIZATION_MODE"]}')
+            shuffle_index = shuffle_epochs(stimdict["RANDOMIZATION_MODE"],stimdict["EPOCHS"])
         except:
             shuffle_index = shuffle_epochs(stimdict["randomize"][0],stimdict["EPOCHS"]) # Seb, temp line for old stimuli design
 
@@ -379,7 +406,7 @@ def main(path_stimfile):
     # Creating the stimulus object per epoch
     stim_object_ls = list()
     for i,stimtype in enumerate(stimdict["stimtype"]):
-        if stimdict["pers.corr"][i] == 1:
+        if stimdict["PERSPECTIVE_CORRECTION"] == 1:
             _units = 'deg' # Keep in "deg" when using the warper.
 
         else:
@@ -387,23 +414,27 @@ def main(path_stimfile):
             # in degrees when the perspective is not corrected by the warper.
             _units = 'degFlatPos'
 
-        if stimtype[-6:] == "circle":
+        if stimtype[-1] == "C":
             circle = visual.Circle(win, units=_units, edges = 128)
             stim_object = circle
 
-        elif stimtype ==  "stripe(s)":
+        elif stimtype ==  "SSR":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
 
-        elif stimtype ==  "driftingstripe":
+        elif stimtype ==  "R":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
 
-        elif stimtype == "noise":
+        elif stimtype ==  "DS":
+            bar = visual.Rect(win, lineWidth=0, units=_units)
+            stim_object = bar
+
+        elif stimtype == "N":
             noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')
             stim_object = noise
 
-        elif stimtype[-7:] == "grating":
+        elif stimtype[-1:] == "G":
             grating = visual.GratingStim(win,units=_units, name='grating',
                                          tex='sqr',colorSpace='rgb',
                                          blendmode='avg',texRes=128,
@@ -419,7 +450,7 @@ def main(path_stimfile):
             # noise.buildNoise()
             stim_object =grating
 
-        elif stimtype ==  "dottygrating":
+        elif stimtype ==  "DG":
             grating = visual.GratingStim(win,units=_units, name='grating',
                                          tex='sqr',colorSpace='rgb',blendmode='avg',
                                          texRes=128, interpolate=True, depth=-1.0,
@@ -559,7 +590,7 @@ def main(path_stimfile):
 
         # choose next epoch
         try:
-            (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZE"],
+            (epoch,current_index) = choose_epoch(shuffle_index,stimdict["RANDOMIZATION_MODE"],
                                              stimdict["EPOCHS"],current_index)
         except:
             (epoch,current_index) = choose_epoch(shuffle_index,stimdict['randomize'][0],
@@ -575,33 +606,38 @@ def main(path_stimfile):
         try:
 
             # Functions that draw the different stimuli
-            if stimdict["stimtype"][epoch] == "stripe(s)":
+            if stimdict["stimtype"][epoch] == "SSR":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.flashing_stripes(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
-            elif stimdict["stimtype"][epoch][-6:]== "circle":
+            elif stimdict["stimtype"][epoch][-1]== "C":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
-            elif stimdict["stimtype"][epoch] == "driftingstripe":
+            elif stimdict["stimtype"][epoch][-1]== "R":
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                                                                out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
+            
+            elif stimdict["stimtype"][epoch] == "DS":
                 #print(f'FUNCTION CALLED: {global_clock.getTime()}')
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
 
-            elif stimdict["stimtype"][epoch] == "noise":
+            elif stimdict["stimtype"][epoch] == "N":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
-            elif stimdict["stimtype"][epoch][-7:] == "grating":
+            elif stimdict["stimtype"][epoch][-1:] == "G":
 
                 (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
-            elif stimdict["stimtype"][epoch] == "dottygrating":
+            elif stimdict["stimtype"][epoch] == "DG":
 
                 (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch][0],stim_object_ls[epoch][1],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
