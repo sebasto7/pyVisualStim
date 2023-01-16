@@ -64,9 +64,12 @@ def main(path_stimfile):
         core.quit()  # user pressed cancel
 
     # Store info about the experiment session
-    exp_Info = {'ExpName': config.ID_DICT['EXP_NAME'],'User': config.ID_DICT['USER_ID'], 'Subject_ID': config.ID_DICT['SUBJECT_ID'],
-                'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
-                'WinMasks': config.WIN_MASK, 'CalibrateGamma_psychopy':0, 'Mode': config.MODE}
+    exp_Info = {'Experiment': config.ID_DICT['EXP_NAME'],'User': config.ID_DICT['USER_ID'], 'Subject_ID': config.ID_DICT['SUBJECT_ID'],
+                'TSeries_ID': f"{config.ID_DICT['SUBJECT_ID']}-{config.ID_DICT['TSERIES_NUMBER']}",'Genotype': config.ID_DICT['GENOTYPE'],
+                'Condition' : config.ID_DICT['CONDITION'],'Stimulus' : config.ID_DICT['STIMULUS_ID'], 'Age' : config.ID_DICT['AGE'],
+                'Sex' : config.ID_DICT['SEX'],'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
+                'Projector_mode': config.MODE}
+
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
     if dlg.OK == False:
@@ -78,13 +81,14 @@ def main(path_stimfile):
                                                 _time.minute,_time.second)
 
     exp_Info['psychopyVersion'] = psychopy.__version__
-    exp_Info['frameRate'] = round(config.FRAMERATE,2)
-    exp_Info['distanceScreen'], exp_Info['screenWidth'] = config.DISTANCE, config.SCREEN_WIDTH
+    exp_Info['Frame_rate'] = config.FRAMERATE
+    exp_Info['Screen_distance'], exp_Info['Screen_width'] = config.DISTANCE, config.SCREEN_WIDTH
+    exp_Info['WinMasks'] = config.WIN_MASK
 
  ##############################################################################
  #######################Settings for DLP Pattern Mode##########################
  ##############################################################################
-    if exp_Info['Mode'] == 'patternMode':
+    if exp_Info['Projector_mode'] == 'patternMode':
         _viewScale = [1,1/2]
     else:
         _viewScale = [1,1]
@@ -177,7 +181,7 @@ def main(path_stimfile):
             win_mask_ls = window_3masks(win,_monitor=mon)
 
     # Gamma calibration
-    if exp_Info['CalibrateGamma_psychopy']:
+    if config.CALIBRATE_GAMMA:
         print(f'Psychopy gamma before calibration: {mon.getGamma()}')
         lum_measured = config.LUM_MEASURED
         lum_inputs = config.LUM_INPUTS
@@ -234,9 +238,9 @@ def main(path_stimfile):
 ##############################################################################
 
     # store frame rate of monitor if we can measure it
-    exp_Info['frameRate'] = win.getActualFrameRate()
-    if exp_Info['frameRate'] != None:
-        frameDur = 1.0 / round(exp_Info['frameRate'])
+    exp_Info['actual_frameRate'] = win.getActualFrameRate()
+    if exp_Info['Frame_rate'] != None:
+        frameDur = 1.0 / round(exp_Info['Frame_rate'])
     else:
         frameDur = 1.0 / 60.0  # could not measure, so guess
 
@@ -683,7 +687,10 @@ def main(path_stimfile):
     # #Uncomment the following if you would like to save the stimulation as a movie in your PC.
     # #Not recomended for usual recordings but just for examples of short duration
     ##Saving movie frames
-    #win.saveMovieFrames('G:\\SebastianFilesExternalDrive\\Science\\PhDAGSilies\\2pData Python_data\\0. Stim gif files\\Record_Gratings_sine_5MC_white_noise_30sw_30deg_sec_1hz_3sec_DARK_3sec_moving_8_to_0.0625_48sec.gif')
+    #folder_path = r'your_path'
+    #file_name ='your_file.gif'
+    #saving_path =os.path.join(folder_path,file_name)
+    #win.saveMovieFrames(saving_path)
 
 ##############################################################################
     # Save data

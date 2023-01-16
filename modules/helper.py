@@ -83,7 +83,7 @@ class Output(object):
         time = datetime.datetime.now()
         outfile_temp_name = "%s\\%s_%d%d_%d.txt" %(location,config.OUTFILE_NAME,time.hour,time.minute,time.second)
         outFile_temp = open(outfile_temp_name, 'w')
-        expInfo = '%s %s %s\n' % (exp_Info["ExpName"],exp_Info["User"],exp_Info["Subject_ID"] )
+        expInfo = '%s %s %s\n' % (exp_Info["Experiment"],exp_Info["User"],exp_Info["TSeries_ID"] )
         stimfile = '%s\n' % (path_stimfile)
         outFile_temp.write(expInfo)
         outFile_temp.write(stimfile)

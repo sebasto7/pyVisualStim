@@ -46,27 +46,41 @@ from psychopy import gui
 #Hard coded path for every PC, must be put of any Github folder
 print('>>> Select the file containing your recording IDs information <<<')
 print('Stim OuputFiles will be saved in the same directory')
-IDs_FILE_DIR  = gui.fileOpenDlg(r'C:\Users\sebas\Desktop\temp_pyVisualStim_OutputFiles')
-OUT_DIR  = os.path.dirname(IDs_FILE_DIR[0])
+OUT_DIR = r'C:\Users\sebas\Desktop\temp_pyVisualStim_OutputFiles' # Output files directory. Where to save them
+IDs_FILE_DIR  = gui.fileOpenDlg(OUT_DIR)
+
 
 #Reading current experimental info from file
 try:
+    OUT_DIR  = os.path.dirname(IDs_FILE_DIR[0])
     id_df = pd.read_csv(IDs_FILE_DIR[0], sep=',')
     ID_DICT ={}
     for key, value in zip(id_df['ID'],id_df['value']):
         ID_DICT[key] = value
 
 except:
-    print('>>> YOU DO NOT HAVE A USER FOLDER AND/OR current_rerocding.txt file. Please, create one <<<')
+    print('>>> WARNING <<< ')
+    print('You do not have a user folder and a current_recording.txt file. It is recomended to create one for future usage.')
+    print('It should look like this example:\n')
+    print('''ID,value\nUSER_ID,seb\nEXP_NAME,LC11_BL68362_2x_GCaMP6f\nSUBJECT_NUMBER,fly1\nTSERIES_NUMBER,001\nGENOTYPE,LC11_splitGal4_2x_GCaMP6f\nCONDITION,ExpLine\nSTIMULUS_ID,DQ100_30WB\nAGE,4\nSEX,f''')
     ID_DICT ={}
-    ID_DICT['USER_ID'] = 'seb' 
-    ID_DICT['SUBJECT_ID'] = 1
-    ID_DICT['EXP_NAME'] = 'Input the experiment name'
+    ID_DICT['USER_ID'] = 'Input user name'
+    ID_DICT['EXP_NAME'] = 'Input the experiment name' 
+    ID_DICT['SUBJECT_ID'] = 'Input fly number'
+    ID_DICT['TSERIES_NUMBER'] = 'Input Tseries number'
+    ID_DICT['GENOTYPE'] = 'Input genotype name'
+    ID_DICT['CONDITION'] = 'Input condition'
+    ID_DICT['STIMULUS_ID'] = 'Input stimulus name'
+    ID_DICT['AGE'] = 'Input age'
+    ID_DICT['SEX'] = 'Input sex'
+    print('>>> END OF WARNING <<< \n')
+    
 
 # Initializing USER_ID, SUBJECT_ID and EXP_NAME every new date and user
 x = datetime.now()
 DATE = x.strftime("%Y")+x.strftime("%m")+ x.strftime("%d")
 TIME = x.strftime("%H")+x.strftime("%M")
+ID_DICT['SUBJECT_ID'] = f"{DATE}-{ID_DICT['SUBJECT_ID']}"
 
 # For output file configutation
 SUBJECT_ID = ID_DICT['SUBJECT_ID']
@@ -94,6 +108,7 @@ PULSE_CHANNEL = "Dev2/ctr0"  #or "Dev2/ctr0". Consider using not a counter but d
 MAXRATE = 10000.0 # Seb, currently unused
 
 # For monitor color and luminance calibration:
+CALIBRATE_GAMMA = 0 # 0 or 1
 LUM_INPUTS =   [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0] # Psychopy units, range 0:1
 LUM_MEASURED = [0, 0.05, 0.05,0.05,0.13,0.23,0.35,0.53,0.73,0.9,0.98] # Any units
 LUM_MEASURED = [0.03, 0.05, 0.05,0.07,0.08,0.11,0.12,0.15,0.17,0.20,0.23] # Any units
