@@ -414,7 +414,153 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
     #print(f'FUNCTION ENDS: {global_clock.getTime()}')
     return (out, lastDataFrame, lastDataFrameStartTime)
 
+def drifting_MI_stripe_20dirs(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile,out, bar,dlpOK, viewpos, data,taskHandle = None, lastDataFrame = 0, lastDataFrameStartTime = 0):
+    """drifting_stripe:
+    """
+    available_ori=np.arange(0,180,18)[:-1]
+    win = window
+    win.color= bg_ls[epoch]  # Background for selected epoch
+    bar.fillColor = fg_ls[epoch]
+    bar.width = stimdict["bar.width"][epoch]
+    bar.height = stimdict["bar.height"][epoch]
+    bar.ori = random.choice(list(available_ori))
+    # set timing
+    tau = stimdict["tau"][epoch]
+    duration = stimdict["duration"][epoch]
+    framerate = config.FRAMERATE
+    # Size of your actual window (in the units chosen, normally degrees)
+    scr_width = win.scrWidthCM
+    scr_distance = win.scrDistCM
+    maxhorang = max_horizontal_angle(scr_width, scr_distance)
+    direction= random.choice([-1, 1])
+    maxhorang = maxhorang * direction # x_position should be either 1 or -1
+    maxverang = max_vertical_angle(scr_width, scr_distance)
+    maxverang = maxverang * direction # x_position should be either 1 or -1
+    
+    #Adjusting for the rectangle edge to be printed to screen edge
+    if maxhorang  > 0:
+        shift_pos = (maxhorang) + (stimdict["bar.width"][epoch]/2) # it considers the edge of the screen = (2* maxhorang) and the half width of the rectangle = (stimdict["spacing"][epoch]/2)
+    elif maxhorang  < 0:
+        shift_pos = (maxhorang) - (stimdict["bar.width"][epoch]/2)
+    # Adusting the initial x_position of the stimulus based on max horizontal angle of the screen
+    if bar.ori == 45:
+        bar.pos = (-shift_pos, shift_pos)
+    else:
+        bar.pos = (shift_pos, shift_pos)
+    #Assigning directionality to the epoch. please note. this is different from other stripe stimuli here
+    if bar.pos[0] < 0:
+        direction = "left"
+    elif bar.pos[0] > 0:
+        direction = "right"
+    
+    # "bar.initPos" attribute are present in only some stimuli
+    try: 
+        init_pos  = stimdict["bar.initPos"][epoch]
+        print(f'Initial position: {init_pos} ')
+    except:
+        init_pos = 0.0 # In case the stim input file does not have an initial position, put it to the center
+        
+    # "bar.number"  and "bar.interSpace" attributes are present in only some stimuli
+    bar_ls, space_ls = [], [] # Only implemented for vertical and horizontal bars (see bar.ori)
+    try:
+        bar_number = int(stimdict["bar.number"][epoch])
+        inter_space = stimdict["bar.interSpace"][epoch]
+        for i in range(bar_number):
+            bar_ls.append(bar)
+            space_ls.append(inter_space * i)
+                   
+    except:
+        bar_ls.append(bar)
+        space_ls.append(0.0)
+        
+    
+    # As long as duration, draw the stimulus
+    # Reset epoch timer
+    reset_bar_position = False
+    duration_clock = global_clock.getTime()
+    for frameN in range(int(duration*framerate)): # for seconds*100fps
+        # fast break on key (ESC) pressed
+        if len(event.getKeys(['escape'])):
+            raise StopExperiment
+        
 
+        #Resetting sisters bar possition for next frame
+        if reset_bar_position: # event avoided for first iteration (frame)
+            if bar.ori == 0:
+                if direction == "right":
+                    bar.pos[0] = bar.pos[0] + sum(space_ls)
+                elif direction == "left":   
+                    bar.pos[0] = bar.pos[0] - sum(space_ls)
+            elif bar.ori == 90 :
+                if direction == "right":
+                    bar.pos[1] = bar.pos[1] + sum(space_ls)
+                elif direction == "left":   
+                    bar.pos[1] = bar.pos[1] - sum(space_ls)
+            
+        
+        # As long as tau, draw BACKGROUND (> sign direction)
+        if global_clock.getTime()-duration_clock >= tau:
+            
+            # For each bar object specified by the user (see "bar.number")
+            for i,bar in enumerate(bar_ls):
+                if bar.ori == 0 :
+                    bar.pos = (bar.pos[0], init_pos) # Fixing Y position to a desire initial position
+                    # Move Stimulus with velocity per second
+                    if direction == "right": # For bars moving to the right along the x-axis
+                        bar.pos[0] = bar.pos[0]-space_ls[i] # For sister bars
+                        bar.pos += (stimdict["velocity"][epoch]/framerate,0.0)
+                    elif direction == "left": # For bars moving to the left along the x-axis
+                        bar.pos[0] = bar.pos[0]+space_ls[i] # For sister bars
+                        bar.pos -= (stimdict["velocity"][epoch]/framerate,0.0)
+                elif bar.ori == 90 :
+                    bar.pos = (init_pos,bar.pos[1]) # Fixing X osition to a desire initial position
+                    # Move Stimulus with velocity per second
+                    if direction == "right": # For bars moving to the right along the x-axis
+                        bar.pos[1] = bar.pos[1]-space_ls[i] # For sister bars
+                        bar.pos += (0.0,stimdict["velocity"][epoch]/framerate)
+                    elif direction == "left": # For bars moving to the left along the x-axis
+                        bar.pos[1] = bar.pos[1]+space_ls[i] # For sister bars
+                        bar.pos -= (0.0,stimdict["velocity"][epoch]/framerate)
+                elif bar.ori ==  45:
+                    # Move Stimulus with velocity per second
+                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
+                    if direction == "right": # For bars moving to the right along the x-axis
+                        bar.pos += (stimdict["velocity"][epoch]/framerate*np.sqrt(2),0.0)
+                    elif direction == "left": # For bars moving to the left along the x-axis
+                        bar.pos -= (stimdict["velocity"][epoch]/framerate*np.sqrt(2),0.0)
+                elif bar.ori == 135:
+                    # Move Stimulus with velocity per second
+                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
+                    if direction == "right": # For bars moving to the right along the x-axis
+                        bar.pos += (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
+                    elif direction == "left": # For bars moving to the left along the x-axis
+                        bar.pos -= (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
+
+                bar.draw()
+        # store Output
+        out.tcurr = global_clock.getTime()
+        out.xPos = float(bar.pos[0])
+        out.yPos = time.time()
+        # compute the direction of movement of the present iteration 0-360 degs:
+        
+        direction_vector=bar.ori*direction
+        if direction_vector>0:
+            theta=direction_vector+180
+        else:
+            theta=-direction_vector
+        out.theta = theta # output the actual direction of movement in angle degrees
+
+        # NIDAQ check, timing check and writeout
+        # quick and dirty fix to run stimulus on dlp without mic
+        if not stimdict["MAXRUNTIME"] == 0:
+            (out.data,lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
+        write_out(outFile,out)
+        out.framenumber = out.framenumber +1
+        win.flip() # swap buffers
+        reset_bar_position = True
+        # #SavingMovieFrames
+        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+    return (out, lastDataFrame, lastDataFrameStartTime)
 
 def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
