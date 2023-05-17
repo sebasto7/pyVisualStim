@@ -414,7 +414,104 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
     #print(f'FUNCTION ENDS: {global_clock.getTime()}')
     return (out, lastDataFrame, lastDataFrameStartTime)
 
+def drifting_MI_stripe_20dirs(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile,out, bar,dlpOK, viewpos, data,taskHandle = None, lastDataFrame = 0, lastDataFrameStartTime = 0):
+    """drifting_stripe:
+    """
+    available_ori=np.arange(0, 360, 18)
+    
+    direction_vector= 45 #random.choice(list(available_ori))
+    bar.ori=reflect_angle(direction_vector)
+    
+    #print(f' FUNCTION STARTS: {global_clock.getTime()}')
+    win = window
+    win.color= bg_ls[epoch]  # Background for selected epoch
+    bar.fillColor = fg_ls[epoch]
+    bar.width = stimdict["bar.width"][epoch]
+    bar.height = stimdict["bar.height"][epoch]
+    #bar.ori = stimdict["bar.orientation"][epoch]
+    # set timing
+    tau = stimdict["tau"][epoch]
+    duration = stimdict["duration"][epoch]
+    #direction = stimdict["direction"][epoch]
+    framerate = config.FRAMERATE
+    print(f'framerate: {framerate}')
+    # Size of your actual window (in degrees of visual angle)
+    scr_width =  win.scrWidthCM 
+    scr_distance =  win.scrDistCM 
 
+    # Setting edge positions and the movement of the edge per frame in x and y
+    step=stimdict["velocity"][epoch]/framerate
+    init_pos,span= edge_postitioning_and_width(bar,scr_width,scr_distance,direction_vector) # put the bar either in a corner of the screen or at the edge of the screen (for cardinal directions)
+    #init_pos=numpy.array([0,0])
+    step_multiplicator= find_step_decomposition(direction_vector,step) # define speed of movement in x and y
+    print(f'init_pos: {init_pos}')
+    print(f'Direction: {direction_vector}')
+
+    bar_ls, space_ls = [], [] # Only implemented for vertical and horizontal bars (see bar.ori)
+    
+    # set some parameters in case of multiple bars
+    try:
+        bar_number = int(stimdict["bar.number"][epoch])
+        inter_space = stimdict["bar.interSpace"][epoch]
+        for i in range(bar_number):
+            bar_ls.append(bar)
+            space_ls.append(inter_space * i)
+                   
+    except:
+        bar_ls.append(bar)
+        space_ls.append(0.0)
+        bar_number = 1
+
+
+    # As long as duration, draw the stimulus
+    # Reset epoch timer
+    duration_clock = global_clock.getTime()
+    counter=0
+    bar.width=10
+    for frameN in range(int(duration*framerate)): # for seconds*100fps
+        # fast break on key (ESC) pressed
+        if len(event.getKeys(['escape'])):
+            raise StopExperiment
+
+        #Resetting sisters bar possition for next frame
+
+         #As long as tau, draw FOREGROUND (> sign direction)
+        if global_clock.getTime()-duration_clock >= tau: # TODO continue here. test the stimulus
+            if counter==0:
+                bar.pos=init_pos
+            else:
+               current_step=(counter+1)*step_multiplicator
+               bar.pos= current_step+init_pos
+            counter+=1
+            # For each bar object specified by the user (see "bar.number")
+            for i,bar in enumerate(bar_ls):                
+                bar.draw()
+        ### test an alternative. increase the size of the bar
+        #if global_clock.getTime()-duration_clock >= tau:
+            #if counter>0:
+                #bar.width+=(2*step)
+            #else:
+                #bar.pos=init_pos
+            #for i,bar in enumerate(bar_ls):                
+                #bar.draw()
+            #counter+=1    
+        # store Output
+        out.tcurr = global_clock.getTime()
+        out.xPos = float(bar.pos[0])
+        out.yPos = time.time()
+        out.theta = float(stimdict["velocity"][epoch])
+        # NIDAQ check, timing check and writeout
+        # quick and dirty fix to run stimulus on dlp without mic
+        if not stimdict["MAXRUNTIME"] == 0:
+            (out.data,lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
+        write_out(outFile,out)
+        out.framenumber = out.framenumber +1
+        win.flip() # swap buffers
+        reset_bar_position = True
+        # #SavingMovieFrames
+        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+    #print(f'FUNCTION ENDS: {global_clock.getTime()}')
+    return (out, lastDataFrame, lastDataFrameStartTime)
 
 def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
