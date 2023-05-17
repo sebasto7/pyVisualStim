@@ -124,7 +124,9 @@ def main(path_stimfile):
 
         elif stimtype == "driftingstripe":
             stimdict["stimtype"][s] = "DS"
-
+            
+        elif stimdict["stimtype"][epoch] == "randomDriftingStripes":
+            stimdict["stimtype"][s] = "RDS"
 
         elif stimtype == "noise":
             stimdict["stimtype"][s] = "N"
@@ -433,7 +435,11 @@ def main(path_stimfile):
         elif stimtype ==  "DS":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
-
+            
+        elif stimtype ==  "RDS":
+            bar = visual.Rect(win, lineWidth=0, units=_units)
+            stim_object = bar
+        
         elif stimtype == "N":
             noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')
             stim_object = noise
@@ -626,6 +632,10 @@ def main(path_stimfile):
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
             
             elif stimdict["stimtype"][epoch] == "DS":
+                #print(f'FUNCTION CALLED: {global_clock.getTime()}')
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                                                                out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
+            elif stimdict["stimtype"][epoch] == "RDS":
                 #print(f'FUNCTION CALLED: {global_clock.getTime()}')
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
