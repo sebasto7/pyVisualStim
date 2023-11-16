@@ -3,6 +3,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from logging import raiseExceptions
 import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
@@ -530,7 +531,163 @@ def main(path_stimfile):
                     
 
                     sys.exit()
+
+            elif stimdict["STIMULUSDATA"] =="random_moving_binary_noise": 
+                """ this is a stimulus intended to more strongly stimulate direction selective neurons.
+                  it is similar to the hi_res aproach (pamplona et al, 2022) but shifts ocurr in predefined steps 
+                  according to a movement speed
+                  the steps of movement are decided randomly in each time step
+                  
+                  initially this stimulus is hardcoded to have binary luminance changes
+                  
+                  this stimulus type requires a speed of movement"""
+
+                grayvalues = np.array([0,2.0]).astype('float64')
+                grayvalues = np.where(grayvalues>-1,(grayvalues*63.0/255.0)-1,-1)
+                #print(grayvalues)
+                number_of_frames=15000
+                stim_texture_ls = list()
+                noise_array_ls = list()
+                moves = np.zeros((2, number_of_frames)) # 2 directions: x and y. 15000 random choices of shift that should be divisible by the shift resolution
+
+                # set the resolution of the stimulus which is defined by the minimal movement posible, which is the lenght of movement given the speed and the framerate
+                # ideally this should be an integer that should be able to divide without residue the final matrix size
+                
+                step = int(stimdict['frame_duration']*stimdict['speed'])
+
+                if 80%step != 0:
+                    raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
+                
+                # set posible steps in units of stimulus pixels (the real step choice is -1*step,0,1*step)
+                step_choices = [-1,0,1]
+                               
+
+                # set stimuli dimensions
+                
+                box_size_x = stimdict["Box_sizeX"] # first guess: this number should be around 20 
+                box_size_y = stimdict["Box_sizeY"]
+
+                frames=number_of_frames
+                
+                if 80%box_size_x == 0 and 80%box_size_y ==0:                
+                            x_dim = int(80/box_size_x) #80 is the size of the screen in degrees, for now this is hardcoded
+                            y_dim = int(80/box_size_y)
+                else:
+                    raise Exception ('in the current implementation, the code only accepts divisors of 80 as box_size')
+                
+                try:
+                    np.random.seed(stimdict["seed"])
+                    print(stimdict["seed"])
+                except:
+                    np.random.seed(3)
+                    print(3)
+                #test = stimdict["Test"]
+
+                final_size=int(80/step)
+
+                
+                if stimdict['include_duration']: # if we want the field to move consistently for a number of frames
+                    # it takes tha same as the dimension number in steps to reach the original position
+                   
+                    choices_of_duration = np.array(range(1,(final_size)))# the maximum duration of a moving bout is determined by the size of the screen
                     
+                    
+                    def create_sustained_random_movement_vector(seed1,seed2,frams,choices_dur,steps_possible):
+                        duration1 = []
+                        np.random.seed(seed1)
+                        while np.sum(duration1)<frams:
+                            duration1.append(np.random.choice(choices_dur))
+
+                        moves_loc=np.zeros((np.sum(duration1)))
+                        np.random.seed(seed2)
+                        count=0
+                        for ix,repeats in enumerate(duration1):                        
+                            value_movement = np.random.choice(steps_possible)
+                            moves_loc[count:count+repeats] = value_movement
+                            count=count+repeats
+
+                        moves_loc = moves_loc[:frams]
+                        return moves_loc
+
+                    moves1 = create_sustained_random_movement_vector(4,0,number_of_frames,choices_of_duration)
+                    moves2 = create_sustained_random_movement_vector(5,1,number_of_frames,choices_of_duration)
+
+                    moves[0,:] = moves1
+                    moves[1,:] = moves2
+
+
+                else:
+
+                    for i in range(0,2): # x,y shift arrays
+                            np.random.seed(i)
+                            moves[i,:]= np.random.choice(step_choices, number_of_frames, replace=True)#range(int(np.floor(-38/stimdict["Shift_resolution"])),int(np.floor(40/stimdict["Shift_resolution"]))), number_of_frames, replace=True) #this range determines the x multiples of shifts 
+                    
+                moves=np.cumsum((moves),axis=1)
+                # if test:
+                # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
+                # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
+                # else:
+                try:
+                    np.random.seed(stimdict["seed"])
+                    print(stimdict["seed"])
+                except:
+                    np.random.seed(3)
+                    print(3)
+                noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
+                
+                #upscale the stim array to be able to shift it in small
+                upscale_factor_x = box_size_x/stimdict["Shift_resolution"]
+                upscale_factor_y = box_size_y/stimdict["Shift_resolution"]
+                if stimdict["Shift_resolution"] != 0:
+                    #noise_texture = np.repeat(noise_texture,box_size_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
+                    #noise_texture = np.repeat(noise_texture,box_size_y,axis=2)
+
+                    noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
+                    noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+
+
+                #copy_texture = copy.deepcopy(noise_texture)
+                #print(np.unique(noise_texture))
+                for frame in range(int(number_of_frames)):
+                    
+                    noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], int(moves[0,frame]),axis=0)
+                    noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], int(moves[1,frame]),axis=1)
+                    #test
+                    #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*1,axis=0)
+                    #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*0,axis=1)
+                    ##end of test
+                    
+
+                if stimdict["print"] == 'True':
+                    for frame in range(int(number_of_frames/100)):
+                        plt.figure()
+                        plt.imshow(noise_texture[frame,:,:],cmap='gray')
+                        plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\_" + str(frame) + ".jpg")
+                        plt.close()
+                #     sys.exit()
+                stim_texture_ls.append(noise_texture)
+                
+                if stimdict["print"] == 'True':
+
+                    plt.figure()
+                    plt.hist(moves[0,:],bins=np.arange(-20,22,1))
+                    plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_shift.jpg"%(0,stimdict["Box_sizeX"],stimdict["Shift_resolution"]))
+                    plt.close('all')
+                    plt.figure()
+                    plt.hist(moves[1,:],bins=np.arange(-20,22,1))
+                    plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_shift.jpg"%(1,stimdict["Box_sizeX"],stimdict["Shift_resolution"]))
+                    plt.close('all')
+
+                    print(np.unique(stim_texture_ls))
+                    print(np.max(np.array(stim_texture_ls)))
+                    copy_texture = np.squeeze(np.array(stim_texture_ls)) # normalize the stimulus before saving)
+                    print(copy_texture.shape)
+                    print(np.unique(copy_texture))
+                    np.save("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics\\stimulus_%sdegbox_%sdeg_shift.npy"%(stimdict["Box_sizeX"],stimdict["Shift_resolution"]),copy_texture)
+                    
+
+                    sys.exit()
+
 
             elif  stimdict["STIMULUSDATA"] == "POLIGON":
                 stim_texture_ls = list()
@@ -809,6 +966,7 @@ def main(path_stimfile):
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.h_res_noise(bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                     out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
+          
             
             elif stimdict["stimtype"][epoch][-1:] == "G":
 
