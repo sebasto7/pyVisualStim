@@ -6,6 +6,8 @@ from collections import defaultdict
 import PyDAQmx as daq
 import numpy
 import datetime
+import os
+import imageio
 
 from modules.exceptions import MicroscopeException, StimulusTimeExceededException, GlobalTimeExceededException
 from modules import config
@@ -742,3 +744,23 @@ def set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,directio
         direction = "down"
 
     return direction
+
+def create_movie_from_png(input_folder, output_path, fps=24):
+    # Get all .png files in the input folder
+    image_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.png')]
+    image_files.sort()  # Sort files to ensure the correct order
+
+    # Create a list to store images
+    images = []
+
+    # Read each image file and append it to the images list
+    for image_file in image_files:
+        image_path = os.path.join(input_folder, image_file)
+        image = imageio.imread(image_path)
+        images.append(image)
+
+    # Write the images to a movie file
+    with imageio.get_writer(output_path, fps=fps) as writer:
+        for image in images:
+            writer.append_data(image)
+    

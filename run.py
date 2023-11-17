@@ -34,9 +34,8 @@ if __name__ == "__main__":
     user()
 
     # #For running from the terminal
- 
-    #print("In the terminal write: python.py user <choose_user_name>")
-    #user("seb")
+    # "In the terminal write: python run.py user <choose_user_name>"
+    # #user("seb"), for example. 
 
     
 

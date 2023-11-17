@@ -17,12 +17,13 @@ import numpy as np
 import copy
 import time
 import cv2
+import os
 
 from modules.helper import *
 from modules.exceptions import StopExperiment, MicroscopeException, StimulusTimeExceededException, GlobalTimeExceededException
 from modules import config
 
-def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, global_clock, duration_clock,
+def field_flash(exp_Info,bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, global_clock, duration_clock,
                 outFile,out, stim_obj,dlpOK, viewpos, data,taskHandle = None,
                 lastDataFrame = 0, lastDataFrameStartTime = 0):
 
@@ -179,6 +180,20 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
         write_out(outFile,out)
 
         out.framenumber = out.framenumber +1
+
+        if exp_Info['saving_movie_frames']:
+                    
+                    # Capture the frame
+                    frame_image = win.getMovieFrame(buffer='back')
+
+                    # Save the frame to a file (e.g., as individual images)
+                    # Create epoch folder
+                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+                    os.makedirs(epoch_folder ,exist_ok=True)
+                    file_name = f'frame_{frameN:03d}.png'
+                    save_path = os.path.join(epoch_folder, file_name)
+                    frame_image.save(save_path)
+
         win.flip() # swap buffers
         reset_bar_position = True
         start_frame = start_frame + frame_shift
@@ -189,7 +204,7 @@ def field_flash(bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, glob
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
-def standing_stripes_random(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile, out, bar, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile, out, bar, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
     """standing_stripes_random:
 
@@ -236,7 +251,7 @@ def standing_stripes_random(bg_ls,fg_ls,stimdict, epoch, window, global_clock, d
     out.boutInd = out.boutInd + 1
 
     counter = [0, 0]
-    for n in range(epoch_duration):
+    for frameN in range(epoch_duration):
 
         if len(event.getKeys(['escape'])):
             raise StopExperiment
@@ -279,6 +294,22 @@ def standing_stripes_random(bg_ls,fg_ls,stimdict, epoch, window, global_clock, d
             (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock, taskHandle, data, lastDataFrame, lastDataFrameStartTime)
         write_out(outFile, out)
         out.framenumber = out.framenumber + 1
+
+        if exp_Info['saving_movie_frames']:
+                    # Capture the frame
+                    frame_image = win.getMovieFrame(buffer='back')
+
+                    # Save the frame to a file (e.g., as individual images)
+                    # Create epoch folder
+                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+                    os.makedirs(epoch_folder ,exist_ok=True)
+                    file_name = f'frame_{frameN:03d}.png'
+                    save_path = os.path.join(epoch_folder, file_name)
+                    frame_image.save(save_path)
+
+        win.flip() # swap buffers
+        reset_bar_position = True
+        start_frame = start_frame + frame_shift
 
         win.flip()
         # #SavingMovieFrames
@@ -407,16 +438,31 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
             (out.data,lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
         write_out(outFile,out)
         out.framenumber = out.framenumber +1
+
+        if exp_Info['saving_movie_frames']:
+            
+            # Capture the frame
+            frame_image = win.getMovieFrame(buffer='back')
+
+            # Save the frame to a file (e.g., as individual images)
+            # Create epoch folder
+            epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+            os.makedirs(epoch_folder ,exist_ok=True)
+            file_name = f'frame_{frameN:03d}.png'
+            save_path = os.path.join(epoch_folder, file_name)
+            frame_image.save(save_path)
+
         win.flip() # swap buffers
         reset_bar_position = True
-        # #SavingMovieFrames
-        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+        #SavingMovieFrames
+        win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+        
     #print(f'FUNCTION ENDS: {global_clock.getTime()}')
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
 
-def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def stim_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
     """stim_noise:
 
@@ -478,13 +524,25 @@ def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duratio
 
             out.framenumber = out.framenumber + 1
 
+            if exp_Info['saving_movie_frames']:
+                    # Capture the frame
+                    frame_image = win.getMovieFrame(buffer='back')
+
+                    # Save the frame to a file (e.g., as individual images)
+                    # Create epoch folder
+                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+                    os.makedirs(epoch_folder ,exist_ok=True)
+                    file_name = f'frame_{frameN:03d}.png'
+                    save_path = os.path.join(epoch_folder, file_name)
+                    frame_image.save(save_path)
+
             win.flip()
 
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
 
-def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
     """noisy_grating:
 
@@ -587,6 +645,18 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
 
             out.framenumber = out.framenumber + 1
 
+            if exp_Info['saving_movie_frames']:
+                    # Capture the frame
+                    frame_image = win.getMovieFrame(buffer='back')
+
+                    # Save the frame to a file (e.g., as individual images)
+                    # Create epoch folder
+                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+                    os.makedirs(epoch_folder ,exist_ok=True)
+                    file_name = f'frame_{frameN:03d}.png'
+                    save_path = os.path.join(epoch_folder, file_name)
+                    frame_image.save(save_path)
+
             win.flip()
 
             ##SavingMovieFrames
@@ -624,7 +694,7 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
 
 
 
-def dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating,dots, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def dotty_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating,dots, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
     """dotty_grating:
 
@@ -696,6 +766,18 @@ def dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, 
             write_out(outFile, out)
 
             out.framenumber = out.framenumber + 1
+
+            if exp_Info['saving_movie_frames']:
+                    # Capture the frame
+                    frame_image = win.getMovieFrame(buffer='back')
+
+                    # Save the frame to a file (e.g., as individual images)
+                    # Create epoch folder
+                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+                    os.makedirs(epoch_folder ,exist_ok=True)
+                    file_name = f'frame_{frameN:03d}.png'
+                    save_path = os.path.join(epoch_folder, file_name)
+                    frame_image.save(save_path)
 
             win.flip()
 

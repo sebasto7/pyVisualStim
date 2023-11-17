@@ -17,6 +17,7 @@ import numpy as np
 import h5py
 import datetime
 import time
+import os
 
 from modules.helper import *
 from modules.exceptions import *
@@ -68,7 +69,7 @@ def main(path_stimfile):
                 'TSeries_ID': f"{config.ID_DICT['SUBJECT_ID']}-{config.ID_DICT['TSERIES_NUMBER']}",'Genotype': config.ID_DICT['GENOTYPE'],
                 'Condition' : config.ID_DICT['CONDITION'],'Stimulus' : config.ID_DICT['STIMULUS_ID'], 'Age' : config.ID_DICT['AGE'],
                 'Sex' : config.ID_DICT['SEX'],'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
-                'Projector_mode': config.MODE}
+                'Projector_mode': config.MODE, 'saving_movie_frames': config.SAVE_MOVIE}
 
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
@@ -172,6 +173,7 @@ def main(path_stimfile):
         _width,_height = 1920, 1080 # Full size in my ASUS VG248 monitor
         _width,_height = 1000, 1000 # window size = 18cm in  my Lenovo laptop
         _width,_height = 500, 500 # window size = 9cm in  my Lenovo laptop
+        _width,_height = 512, 512 # window size = 9cm in  my Lenovo laptop + resizing the images for saving movie frames with imageio
 
         mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor=mon,size = [_width,_height], screen = 0,
@@ -612,17 +614,17 @@ def main(path_stimfile):
             # Functions that draw the different stimuli
             if stimdict["stimtype"][epoch] == "SSR":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1]== "C":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1]== "R":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
             
             elif stimdict["stimtype"][epoch] == "DS":
@@ -633,17 +635,17 @@ def main(path_stimfile):
 
             elif stimdict["stimtype"][epoch] == "N":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(exp_Info,bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1:] == "G":
 
-                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch] == "DG":
 
-                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch][0],stim_object_ls[epoch][1],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
 
@@ -682,16 +684,6 @@ def main(path_stimfile):
              # fake key-press to stop experiments through event listener
             event._onPygletKey(key.END,key.MOD_CTRL)
 
-
-    # ##
-    # #Uncomment the following if you would like to save the stimulation as a movie in your PC.
-    # #Not recomended for usual recordings but just for examples of short duration
-    ##Saving movie frames
-    #folder_path = r'your_path'
-    #file_name ='your_file.gif'
-    #saving_path =os.path.join(folder_path,file_name)
-    #win.saveMovieFrames(saving_path)
-
 ##############################################################################
     # Save data
     outFile.close()
@@ -704,11 +696,39 @@ def main(path_stimfile):
     if counterTaskHandle:
         clearTask(pulseTaskHandle)
 
-    # Stop
-    print ("Write out ... close ...")
-    win.close()
-    core.quit()
+    
 
+    #Saving movie frames
+    if exp_Info['saving_movie_frames']: #Not recomended for usual recordings but just for examples of short duration
+        #Saving movie frames
+        print('Saving movie frames...')
+        folder_path = config.OUT_DIR
+        file_name =f'stimulus.gif'
+        saving_path =os.path.join(folder_path,file_name)
+        try:
+            win.saveMovieFrames(saving_path)
+        except:
+            print('>>> win.saveMovieFrames failed to generate the .gif file \n using imageio as alternative')
+                    # Set the input folder containing .png files
+            input_folder = os.path.join(config.OUT_DIR,'Last_stim_movie_frames')
+            for folder_path, _, _ in os.walk(input_folder):
+                # Set the saving path for the movie file (e.g., .mp4)
+                saving_path = os.path.join(folder_path, 'stimulus.mp4')
+                # Set the frames per second (fps) for the movie
+                fps = config.FRAMERATE
+                # Create the movie from .png files
+                create_movie_from_png(folder_path, saving_path, fps)
+
+        win.close()
+        core.quit()
+    
+    else:
+
+        # Stop
+        print ("Write out ... closed!")
+
+        win.close()
+        core.quit()
 
 
 def clearTask(taskHandle):

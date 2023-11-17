@@ -46,7 +46,7 @@ from psychopy import gui
 #Hard coded path for every PC, must be put of any Github folder
 print('>>> Select the file containing your recording IDs information <<<')
 print('Stim OuputFiles will be saved in the same directory')
-OUT_DIR = r'C:\Users\sebas\Desktop\temp_pyVisualStim_OutputFiles' # Output files directory. Where to save them
+OUT_DIR = r'C:\Users\smolina\Documents' # Output files directory. Where to save them
 IDs_FILE_DIR  = gui.fileOpenDlg(OUT_DIR)
 
 
@@ -114,7 +114,10 @@ LUM_MEASURED = [0, 0.05, 0.05,0.05,0.13,0.23,0.35,0.53,0.73,0.9,0.98] # Any unit
 LUM_MEASURED = [0.03, 0.05, 0.05,0.07,0.08,0.11,0.12,0.15,0.17,0.20,0.23] # Any units
 if MODE == 'patternMode':
     GAMMA_LS = [1,1,1] # Gamma for each channel [R,G,B]
-    COLOR_ON = [0,1,1] # 1 or 0 for [R,G,B]
+    COLOR_ON = [1,1,1] # 1 or 0 for [R,G,B]
 elif MODE == 'videoMode':
     GAMMA_LS = [1,1,1.8] # Gamma for each channel [R,G,B]
     COLOR_ON = [0,0,1] # 1 or 0 for [R,G,B]
+
+#For visualizing stimulus for presentations
+SAVE_MOVIE = False
