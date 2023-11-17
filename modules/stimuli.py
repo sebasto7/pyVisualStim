@@ -430,7 +430,7 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
         # store Output
         out.tcurr = global_clock.getTime()
         out.xPos = float(bar.pos[0])
-        out.yPos = time.time()
+        out.yPos = float(bar.pos[1]) # out.yPos = time.time() was a BUG !!!
         out.theta = float(stimdict["velocity"][epoch])
         # NIDAQ check, timing check and writeout
         # quick and dirty fix to run stimulus on dlp without mic
