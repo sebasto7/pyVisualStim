@@ -553,7 +553,7 @@ def main(path_stimfile):
                 # set the resolution of the stimulus which is defined by the minimal movement posible, which is the lenght of movement given the speed and the framerate
                 # ideally this should be an integer that should be able to divide without residue the final matrix size
                 
-                step = int(stimdict['frame_duration']*stimdict['speed'])
+                step = int(float(stimdict['frame_duration'])*float(stimdict['speed']))
 
                 if 80%step != 0:
                     raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
@@ -586,7 +586,7 @@ def main(path_stimfile):
                 final_size=int(80/step)
 
                 
-                if stimdict['include_duration']: # if we want the field to move consistently for a number of frames
+                if stimdict['persistent_movement']: # if we want the field to move consistently for a number of frames
                     # it takes tha same as the dimension number in steps to reach the original position
                    
                     choices_of_duration = np.array(range(1,(final_size)))# the maximum duration of a moving bout is determined by the size of the screen
