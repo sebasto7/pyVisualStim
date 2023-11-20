@@ -477,7 +477,7 @@ def stim_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duratio
                 raise StopExperiment
 
             #Geeting RGB values for the texture
-            rgb_t = numpy.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
+            rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = -1 # All R value to -1
             rgb_t[:,:,1] = -1 # All G value to -1
             #rgb_t[:,:,2] = t
@@ -538,7 +538,7 @@ def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, durati
                 raise StopExperiment
             
             #Geeting RGB values for the texture
-            rgb_t = numpy.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
+            rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = t # All R value to -1
             rgb_t[:,:,2] = t # All G value to -1
             rgb_t[:,:,1] = t
@@ -605,9 +605,9 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
             print(bg_ls[epoch])
             win.color= [-1, -1, -1]
         else:
-            grating.size= (numpy.sqrt(2*(maxhorang**2)), numpy.sqrt(2*(maxhorang**2)))
+            grating.size= (np.sqrt(2*(maxhorang**2)), np.sqrt(2*(maxhorang**2)))
     except:
-        grating.size= (numpy.sqrt(2*(maxhorang**2)), numpy.sqrt(2*(maxhorang**2)))
+        grating.size= (np.sqrt(2*(maxhorang**2)), np.sqrt(2*(maxhorang**2)))
         pass
     # print (stimdict.keys())
     # print (stimdict["circmask"][epoch])
@@ -620,7 +620,7 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
         direction = 1
     except:
         try:
-            grating.ori=grating.ori = stimdict["orientation"][epoch]
+            grating.ori = stimdict["orientation"][epoch]
             direction = int(stimdict["direction"][epoch]) # Direction of the moving grating: either +1 or -1 
             print('Orientation: {}, Direction: {}'.format( grating.ori,direction))
         except:
@@ -718,8 +718,79 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
 
     return (out, lastDataFrame, lastDataFrameStartTime)
 
+def sinusoid_grating_noise(viewpos,bg_ls,frames,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+    """ every frame it shows a grating with random spatial_frequency, random orientation, and random phase
+     """
+    
+    #set window
+    win = window
+    colorbg = [((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1] # Background for selected epoch    
+    win.color =  colorbg
+    win.colorSpace = 'rgb'
+    grating.size = 200 # a size_ that will for sure fill the whole screen
+    
 
+    #set random values of orientation, phase and spatial wavelength
+    orientation_choice = range(0,360,10) # 10 degree resolution
+    SW_choice = range(10,40,5) #(in degrees) # minimum change in sw is 5 degrees according to interommatidial distance
+    phase_choice =  np.array(range(0,10,2))/10 #(in units of spatial wavelenght) at a SW of 5 deg, minimum phase change is 1 deg
+    
+    np.random.seed(0)
+    orientations = np.random.choice(orientation_choice,replace=True,size=(frames))
+    np.random.seed(10)
+    SWs = np.random.choice(SW_choice,replace=True,size=(frames))
+    np.random.seed(100)
+    phases = np.random.choice(phase_choice,replace=True,size=(frames))
+    phases = phases * SWs
 
+    # set timing
+    framerate = config.FRAMERATE
+    tau = stimdict["tau"][epoch]
+    tex_duration = int(float(stimdict['frame_duration'])* framerate)
+    
+    for count in range(stim_texture.shape[0]):
+        while global_clock.getTime()-duration_clock <= tau:  
+            win.flip()
+        print('tau_done')    
+        #print('tex_duration')
+        for count in range(stim_texture.shape[0]):            
+            t = stim_texture [count,:,:]
+            orientation = orientations[count]
+            phase = phases[count]
+            sw = SWs[count]
+            for frameN in range(tex_duration):
+                if len(event.getKeys(['escape'])):
+                    raise StopExperiment
+                
+                #Geeting RGB values for the texture
+                rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
+                rgb_t[:,:,0] = t # All R value to -1
+                rgb_t[:,:,2] = t # All G value to -1
+                rgb_t[:,:,1] = t
+                # for i in range(1):
+                #     rgb_t[:,:,i+1] = t # Setting G and B values
+                    
+                # noise.tex = t
+                grating.tex = t
+                grating.sf = 1/sw
+                grating.ori = orientation
+                grating.pos = [np.cos(np.deg2rad(orientation))*phase,np.sin(np.deg2rad(orientation))*phase]
+                grating.draw()
+
+                out.tcurr = global_clock.getTime()
+                out.theta = count
+                if not stimdict["MAXRUNTIME"] == 0:
+                    (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
+                write_out(outFile, out)
+                
+                out.framenumber = out.framenumber + 1
+
+                if stimdict['print'] == False:
+                    win.flip()
+                else:
+                    win.flip()
+                    win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".tif")
+                    
 
 def dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating,dots, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
@@ -835,7 +906,7 @@ def drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict, epoch, window, global_cl
     # Setting edge positions and the movement of the edge per frame in x and y
     step=stimdict["velocity"][epoch]/framerate
     init_pos= edge_postitioning_and_width(bar,scr_width,scr_distance,direction_vector) # put the bar either in a corner of the screen or at the edge of the screen (for cardinal directions)
-    #init_pos=numpy.array([0,0])
+    #init_pos=np.array([0,0])
     step_multiplicator= find_step_decomposition(direction_vector,step) # define speed of movement in x and y
     print(f'step: {step_multiplicator}')
     print(f'init_pos: {init_pos}')
