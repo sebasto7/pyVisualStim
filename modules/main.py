@@ -4,6 +4,7 @@
 # -*- coding: utf-8 -*-
 
 from logging import raiseExceptions
+from turtle import st
 import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
@@ -480,12 +481,12 @@ def main(path_stimfile):
                 noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
                 
                 #upscale the stim array to be able to shift it in small
-                upscale_factor_x = box_size_x/stimdict["Shift_resolution"]
-                upscale_factor_y = box_size_y/stimdict["Shift_resolution"]
+
                 if stimdict["Shift_resolution"] != 0:
                     #noise_texture = np.repeat(noise_texture,box_size_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
                     #noise_texture = np.repeat(noise_texture,box_size_y,axis=2)
-
+                    upscale_factor_x = box_size_x/stimdict["Shift_resolution"]
+                    upscale_factor_y = box_size_y/stimdict["Shift_resolution"]
                     noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
                     noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
 
@@ -592,66 +593,68 @@ def main(path_stimfile):
                     choices_of_duration = np.array(range(1,(final_size)))# the maximum duration of a moving bout is determined by the size of the screen
                     
                     
-                    def create_sustained_random_movement_vector(seed1,seed2,frams,choices_dur,steps_possible):
-                        duration1 = []
-                        np.random.seed(seed1)
-                        while np.sum(duration1)<frams:
-                            duration1.append(np.random.choice(choices_dur))
+                    persistant_val1,persistant_val2 = random_persistent_behavior_vector([4,5],number_of_frames,choices_of_duration) # function in helpers
+                    moves1,moves2  =  random_persistent_values([persistant_val1,persistant_val2],[0,10],number_of_frames,step_choices,[1]) # function in helpers
 
-                        moves_loc=np.zeros((np.sum(duration1)))
-                        np.random.seed(seed2)
-                        count=0
-                        for ix,repeats in enumerate(duration1):                        
-                            value_movement = np.random.choice(steps_possible)
-                            moves_loc[count:count+repeats] = value_movement
-                            count=count+repeats
-
-                        moves_loc = moves_loc[:frams]
-                        return moves_loc
-
-                    moves1 = create_sustained_random_movement_vector(4,0,number_of_frames,choices_of_duration)
-                    moves2 = create_sustained_random_movement_vector(5,1,number_of_frames,choices_of_duration)
-
+                    
                     moves[0,:] = moves1
                     moves[1,:] = moves2
+                    moves=np.cumsum((moves),axis=1)
 
+                    # choose persistent luminances to enhance the motion signal relative to the luminance one
 
+                    persistant_lum = random_persistent_behavior_vector([5],number_of_frames,choices_of_duration)
+                    noise_texture = random_persistent_values(persistant_lum,[3],number_of_frames,grayvalues,size=[x_dim,y_dim])
+                    noise_texture = noise_texture[0]
                 else:
 
                     for i in range(0,2): # x,y shift arrays
                             np.random.seed(i)
                             moves[i,:]= np.random.choice(step_choices, number_of_frames, replace=True)#range(int(np.floor(-38/stimdict["Shift_resolution"])),int(np.floor(40/stimdict["Shift_resolution"]))), number_of_frames, replace=True) #this range determines the x multiples of shifts 
                     
-                moves=np.cumsum((moves),axis=1)
-                # if test:
-                # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
-                # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
-                # else:
-                try:
-                    np.random.seed(stimdict["seed"])
-                    print(stimdict["seed"])
-                except:
-                    np.random.seed(3)
-                    print(3)
-                noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
+                    moves=np.cumsum((moves),axis=1)
+                    # if test:
+                    # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
+                    # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
+                    # else:
+                    try:
+                        np.random.seed(stimdict["seed"])
+                        print(stimdict["seed"])
+                    except:
+                        np.random.seed(3)
+                        print(3)
+                    noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
                 
-                #upscale the stim array to be able to shift it in small
-                upscale_factor_x = box_size_x/stimdict["Shift_resolution"]
-                upscale_factor_y = box_size_y/stimdict["Shift_resolution"]
-                if stimdict["Shift_resolution"] != 0:
-                    #noise_texture = np.repeat(noise_texture,box_size_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
-                    #noise_texture = np.repeat(noise_texture,box_size_y,axis=2)
+                #upscale the stim array to be able to shift it in small steps
+                
+                minimum_size_based_on_step = final_size
+                minimum_size_based_on_boxsizex = x_dim
+                minimum_size_based_on_boxsizey = y_dim
 
-                    noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
-                    noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+                minimum_sizex = np.lcm(minimum_size_based_on_step,minimum_size_based_on_boxsizex)
+                minimum_sizey = np.lcm(minimum_size_based_on_step,minimum_size_based_on_boxsizey)
 
+                upscale_factor_x = minimum_sizex/x_dim
+                upscale_factor_y = minimum_sizey/y_dim
+
+                resolutionx = 80/minimum_sizex
+                resolutiony = 80/minimum_sizey
+                step_multiplierx = step/resolutionx
+                step_multipliery = step/resolutiony
+
+                noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
+                noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+
+                # scale the moves accordingly
+                moves[0,:] = moves[0,:]* step_multiplierx
+                moves[1,:] = moves[1,:]* step_multipliery
 
                 #copy_texture = copy.deepcopy(noise_texture)
                 #print(np.unique(noise_texture))
                 for frame in range(int(number_of_frames)):
                     
-                    noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], int(moves[0,frame]),axis=0)
-                    noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], int(moves[1,frame]),axis=1)
+                    noise_texture[frame,:,:] = np.roll(noise_texture[frame,:,:], int(moves[0,frame]),axis=0)
+                    noise_texture[frame,:,:] = np.roll(noise_texture[frame,:,:], int(moves[1,frame]),axis=1)
                     #test
                     #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*1,axis=0)
                     #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*0,axis=1)

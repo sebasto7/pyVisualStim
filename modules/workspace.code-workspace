@@ -4,5 +4,7 @@
 			"path": ".."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.pythonPath": "C:\\Users\\vargasju\\.conda\\envs\\pystim\\python.exe"
+	}
 }
