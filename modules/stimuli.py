@@ -530,6 +530,7 @@ def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, durati
         win.flip()
     print('tau_done')    
     print('tex_duration')
+    
     for count in range(texture.shape[0]):
         
         t= texture[count,:,:]
@@ -718,7 +719,7 @@ def noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_arr,stimdic
 
     return (out, lastDataFrame, lastDataFrameStartTime)
 
-def sinusoid_grating_noise(viewpos,bg_ls,frames,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def sinusoid_grating_noise(frames,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
     """ every frame it shows a grating with random spatial_frequency, random orientation, and random phase
      """
     
@@ -732,7 +733,9 @@ def sinusoid_grating_noise(viewpos,bg_ls,frames,stim_texture,stimdict, epoch, wi
 
     #set random values of orientation, phase and spatial wavelength
     orientation_choice = range(0,360,10) # 10 degree resolution
+    #orientation_choice = [0]
     SW_choice = range(10,40,5) #(in degrees) # minimum change in sw is 5 degrees according to interommatidial distance
+    #SW_choice = [40]
     phase_choice =  np.array(range(0,10,2))/10 #(in units of spatial wavelenght) at a SW of 5 deg, minimum phase change is 1 deg
     
     np.random.seed(0)
@@ -747,49 +750,54 @@ def sinusoid_grating_noise(viewpos,bg_ls,frames,stim_texture,stimdict, epoch, wi
     framerate = config.FRAMERATE
     tau = stimdict["tau"][epoch]
     tex_duration = int(float(stimdict['frame_duration'])* framerate)
-    
-    for count in range(stim_texture.shape[0]):
-        while global_clock.getTime()-duration_clock <= tau:  
-            win.flip()
-        print('tau_done')    
+
+    while global_clock.getTime()-duration_clock <= tau:  
+        
+        win.flip()
+
+    for count in range(frames):
+        #print('tau_done')    
         #print('tex_duration')
-        for count in range(stim_texture.shape[0]):            
-            t = stim_texture [count,:,:]
-            orientation = orientations[count]
-            phase = phases[count]
-            sw = SWs[count]
-            for frameN in range(tex_duration):
-                if len(event.getKeys(['escape'])):
-                    raise StopExperiment
-                
-                #Geeting RGB values for the texture
-                rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
-                rgb_t[:,:,0] = t # All R value to -1
-                rgb_t[:,:,2] = t # All G value to -1
-                rgb_t[:,:,1] = t
-                # for i in range(1):
-                #     rgb_t[:,:,i+1] = t # Setting G and B values
-                    
-                # noise.tex = t
-                grating.tex = t
-                grating.sf = 1/sw
-                grating.ori = orientation
-                grating.pos = [np.cos(np.deg2rad(orientation))*phase,np.sin(np.deg2rad(orientation))*phase]
-                grating.draw()
+        t = stim_texture 
+        orientation = orientations[count]
+        phase = phases[count]
+        sw = SWs[count]
+        #for count in range(tex_duration):            
 
-                out.tcurr = global_clock.getTime()
-                out.theta = count
-                if not stimdict["MAXRUNTIME"] == 0:
-                    (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
-                write_out(outFile, out)
+        for frameN in range(tex_duration):
+            if len(event.getKeys(['escape'])):
+                raise StopExperiment
+            
+            #Geeting RGB values for the texture
+            rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
+            rgb_t[:,:,0] = t # All R value to -1
+            rgb_t[:,:,2] = t # All G value to -1
+            rgb_t[:,:,1] = t
+            # for i in range(1):
+            #     rgb_t[:,:,i+1] = t # Setting G and B values
                 
-                out.framenumber = out.framenumber + 1
+            # noise.tex = t
+            grating.tex = t
+            grating.sf = 1/sw
+            grating.ori = orientation
+            grating.pos = [np.cos(np.deg2rad(orientation))*phase,np.sin(np.deg2rad(orientation))*phase]
+            grating.draw()
 
-                if stimdict['print'] == False:
-                    win.flip()
-                else:
-                    win.flip()
-                    win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".tif")
+            out.tcurr = global_clock.getTime()
+            out.theta = count
+            if not stimdict["MAXRUNTIME"] == 0:
+                (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
+            write_out(outFile, out)
+            
+            out.framenumber = out.framenumber + 1
+
+            if stimdict['print'] == False:
+                win.flip()
+            else:
+                win.flip()
+                win.getMovieFrame()
+        if stimdict['print'] == True:    
+            win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".tif")
                     
 
 def dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating,dots, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):

@@ -295,7 +295,7 @@ def choose_epoch(index,randomize,no_epochs,current_index):
     """Shuffles the epoch sequence according to the randomize option.
 
     :param index: Array of shuffled epoch indices.
-    :type index: Numpy int array
+    :type index: np int array
     :param randomize: 0 (choose next), 1 (every 2nd epoch choose epoch 0), 2 (choose next epoch).
     :type randomize: Integer
     :param no_epochs: Number of epochs in stimfile.
@@ -519,7 +519,7 @@ def position_x(stimdict, epoch, screen_width, distance, seed):
     :type distance: float
     :param seed: seed to be used in the pseudo-random number generation
     :type seed: int
-    :returns: NumPy integer array
+    :returns: np integer array
 
     """
     xmax = stimdict["bar.xmax"][epoch]
@@ -559,7 +559,7 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
     :type distance: float
     :param seed: seed to be used in the pseudo-random number generation
     :type seed: int
-    :returns: NumPy integer array
+    :returns: np integer array
 
     """
 
@@ -743,6 +743,103 @@ def set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,directio
         direction = "down"
 
     return direction
+
+def max_angle_from_center(screen_width, distance):
+
+    """ Returns the angular extent of the screen from the center to the edge
+    in degrees with respect to the fly
+    Assumes that the subject lies on an axis which passes through the screen
+    and that it is centered relative to the screen.
+    Thus, a perpendicular line from the subject to the screen has a degree
+    of zero. Returned value is always positive, therefore the other edge of
+    the screen has the opposite sign of the returned value.
+    It's calculated this way::
+        angle = arctan((screen width/2) /distance of subject to the screen)
+        which is the same as:
+        angle = arctan(screen width /(2*distance of subject to the screen))
+    :param screen_width: width of the screen
+    :type screen_width: float
+    :param distance: perpendicular distance of the subject to the screen
+    :type distance: float
+    :returns: float
+    """
+
+    max_ang = np.arctan((screen_width/2) / distance)
+    max_ang = abs(np.degrees(max_ang))
+
+
+    return max_ang
+
+def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
+    
+    " edge postion for an arbitrary angular direction from the perspective of an observer 0 deg is rigth, 180 left, 90 up 270 down"
+    
+    # define cuadrant of edge initial location
+
+    x=round(1*np.cos(np.deg2rad(angle)),4) # the minus is necesary for allowing the correct direction of movement (for example 0 deg is right movement then needs to start at the left)
+    if x==0:
+        x_pos=0
+    elif x>0:
+        x_pos=1
+    else:
+        x_pos=-1
+
+    y=round(1*np.sin(np.deg2rad(angle)),4)
+    if y==0:
+        y_pos=0
+    elif y>0:
+        y_pos=1
+    else:
+        y_pos=-1
+    location_vector = np.array([x_pos,y_pos])
+    maximum_angle=max_angle_from_center(scr_width, scr_distance)
+    #maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
+    init_pos=np.array([maximum_angle,maximum_angle])*location_vector
+    print(f'maximum_angle: {maximum_angle}')
+    #init_pos=np.array([30,30])*location_vector
+    # find the bar width for the orientation 
+
+    if np.abs(x)>np.abs(y):
+        hypotenuse= maximum_angle/np.abs(x)
+
+    elif np.abs(x)<np.abs(y):
+        hypotenuse= maximum_angle/np.abs(y)
+
+    else:
+        hypotenuse= np.sqrt((maximum_angle**2)*2)
+    
+    bar.width=(2*(hypotenuse))+10
+    print(f'bar width: bar.width')
+
+    # move the bar so the edge lands either in an edge or the corner of the screen
+    shift_x= (bar.width/2)*x
+    shift_y= (bar.width/2)*y
+    #span=bar.width
+    #init_pos = np.array([init_pos[0]+shift_x,init_pos[1]+shift_y])   
+    init_pos = np.array([0 , 0])
+    return init_pos#,span
+
+def find_step_decomposition(angle_dir,step):
+    """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
+        for example. for angle_dir =45 the movement vector will be (-cos(45),-sin(45))"""
+    angle_rad = np.deg2rad(angle_dir)
+    return np.array([-round(np.cos(angle_rad),4),-round(np.sin(angle_rad),4)])*step # the minus value is due to the fact that the fly has a fipped view of the scene
+
+def reflect_angle(angle):
+    
+    """ find the reflected angle across the x axis. this is needed when a mirror is in the stimulus projection path, since the mirror flips 
+    the image across the x axis"""
+    # check if angle is in [0, 360)
+    if angle < 0 or angle >= 360:
+        raise ValueError("The angle must be in the range [0, 360)")
+
+        
+    if angle <= 180:
+        return 180 - angle
+
+    # if angle is in [180, 360), the reflected angle is 540 - angle
+    else:
+        return 540 - angle
 
 
 def random_persistent_behavior_vector(seeds,frames,choices_dur):

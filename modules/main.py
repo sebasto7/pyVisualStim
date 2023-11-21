@@ -590,7 +590,7 @@ def main(path_stimfile):
                 if stimdict['persistent_movement']: # if we want the field to move consistently for a number of frames
                     # it takes tha same as the dimension number in steps to reach the original position
                    
-                    choices_of_duration = np.array(range(1,(final_size)))# the maximum duration of a moving bout is determined by the size of the screen
+                    choices_of_duration = np.array(range(1,26,step))# the maximum duration of a moving bout is determined by the maximum degree of movement allowed (26deg)
                     
                     
                     persistant_val1,persistant_val2 = random_persistent_behavior_vector([4,5],number_of_frames,choices_of_duration) # function in helpers
@@ -969,8 +969,10 @@ def main(path_stimfile):
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.h_res_noise(bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                     out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
-          
-            
+            elif stimdict["stimtype"][epoch] == "Noise_G":
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.sinusoid_grating_noise(15000,stim_texture_ls[epoch-1],stimdict,epoch,win,global_clock,duration_clock,outFile
+                                                                                      ,out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
             elif stimdict["stimtype"][epoch][-1:] == "G":
 
                 (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,

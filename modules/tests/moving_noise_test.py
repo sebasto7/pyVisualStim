@@ -86,6 +86,39 @@ def random_persistent_values(persistent_behavior_vectors,seeds,frames,possible_v
             output_values.append(local_outputvals[:frames])
     return output_values
 
+def max_angle_from_center(screen_width, distance):
+
+    """ Returns the angular extent of the screen from the center to the edge
+    in degrees with respect to the fly
+
+    Assumes that the subject lies on an axis which passes through the screen
+    and that it is centered relative to the screen.
+    Thus, a perpendicular line from the subject to the screen has a degree
+    of zero. Returned value is always positive, therefore the other edge of
+    the screen has the opposite sign of the returned value.
+    It's calculated this way::
+
+        angle = arctan((screen width/2) /distance of subject to the screen)
+
+        which is the same as:
+
+        angle = arctan(screen width /(2*distance of subject to the screen))
+
+
+    :param screen_width: width of the screen
+    :type screen_width: float
+    :param distance: perpendicular distance of the subject to the screen
+    :type distance: float
+    :returns: float
+
+    """
+
+    max_ang = np.arctan((screen_width/2) / distance)
+    max_ang = abs(np.degrees(max_ang))
+
+
+    return max_ang
+
 #%%
 
 persistant = True
@@ -101,10 +134,12 @@ moves = np.zeros((2, number_of_frames)) # 2 directions: x and y. 15000 random ch
 # set the resolution of the stimulus which is defined by the minimal movement posible, which is the lenght of movement given the speed and the framerate
 # ideally this should be an integer that should be able to divide without residue the final matrix size
 
-step = int(0.1*20)
+step = 0.05*20 # maybe this should be hardcoded
+minimum_step = step*np.cos(np.deg2rad(45))
 
-if 80%step != 0:
-    raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
+
+#if 80%step != 0:
+#    raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
 
 # set posible steps in units of stimulus pixels (the real step choice is -1*step,0,1*step)
 step_choices = [-1,0,1]
@@ -117,19 +152,28 @@ box_size_y = 5
 
 frames=number_of_frames
 
-if 80%box_size_x == 0 and 80%box_size_y ==0:                
-            x_dim = int(80/box_size_x) #80 is the size of the screen in degrees, for now this is hardcoded
-            y_dim = int(80/box_size_y)
-else:
-    raise Exception ('in the current implementation, the code only accepts divisors of 80 as box_size')
+# if 80%box_size_x == 0 and 80%box_size_y ==0:                
+#             x_dim = int(80/box_size_x) #80 is the size of the screen in degrees, for now this is hardcoded
+#             y_dim = int(80/box_size_y)
+
+# else:
+#     raise Exception ('in the current implementation, the code only accepts divisors of 80 as box_size')
+
+x_dim = int((max_angle_from_center(9,5.3)*2)//box_size_x)
+y_dim = int((max_angle_from_center(9,5.3)*2)//box_size_y)
+
+minimum_size_step_based = int((max_angle_from_center(9,5.3)*2)//step)
+minimum_size_diag_step = int((max_angle_from_center(9,5.3)*2)//minimum_step)
 
 
+
+diagonal_upscale_factor = 1/(minimum_step)
 
 #np.random.seed(3)
 
 #test = stimdict["Test"]
 
-final_size=int(80/step)
+#final_size=int(80/step)
 
 
 if persistant: # if we want the field to move consistently for a number of frames
@@ -203,6 +247,14 @@ for frame in range(int(number_of_frames)):
     #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*0,axis=1)
     ##end of test
     
+
+#plot distributions 
+
+
+
+
+
+
 
 # if stimdict["print"] == 'True':
 #     for frame in range(int(number_of_frames/100)):
