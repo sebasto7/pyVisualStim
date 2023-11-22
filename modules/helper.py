@@ -763,4 +763,74 @@ def create_movie_from_png(input_folder, output_path, fps=24):
     with imageio.get_writer(output_path, fps=fps) as writer:
         for image in images:
             writer.append_data(image)
+
+def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
+    
+    " edge postion for an arbitrary angular direction from the perspective of an observer 0 deg is rigth, 180 left, 90 up 270 down"
+    
+    # define cuadrant of edge initial location
+
+    x=round(1*numpy.cos(numpy.deg2rad(angle)),4) # the minus is necesary for allowing the correct direction of movement (for example 0 deg is right movement then needs to start at the left)
+    if x==0:
+        x_pos=0
+    elif x>0:
+        x_pos=1
+    else:
+        x_pos=-1
+
+    y=round(1*numpy.sin(numpy.deg2rad(angle)),4)
+    if y==0:
+        y_pos=0
+    elif y>0:
+        y_pos=1
+    else:
+        y_pos=-1
+    location_vector = numpy.array([x_pos,y_pos])
+    maximum_angle=max_angle_from_center(scr_width, scr_distance)
+    maximum_diag_angle=numpy.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
+    init_pos=numpy.array([maximum_angle,maximum_angle])*location_vector
+    print(f'maximum_angle: {maximum_angle}')
+    #init_pos=numpy.array([30,30])*location_vector
+    # find the bar width for the orientation 
+
+    if numpy.abs(x)>numpy.abs(y):
+        hypotenuse= maximum_angle/numpy.abs(x)
+
+    elif numpy.abs(x)==numpy.abs(y):
+        hypotenuse= maximum_angle/numpy.abs(y)
+
+    else:
+        hypotenuse= maximum_diag_angle
+    
+    #bar.width=2*(hypotenuse)
+
+    # move the bar so the edge lands either in an edge or the corner of the screen
+    shift_x= (bar.width/2)*x
+    shift_y= (bar.width/2)*y
+    span=bar.width
+    #init_pos = numpy.array([maximum_angle,maximum_angle])   
+    #init_pos = numpy.array([0 , 0])
+    return init_pos,span
+
+def find_step_decomposition(angle_dir,step):
+    """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
+        for example. for angle_dir =45 the movement vector will be (-cos(45),-sin(45))"""
+    angle_rad = numpy.deg2rad(angle_dir)
+    return numpy.array([-round(numpy.cos(angle_rad),4),-round(numpy.sin(angle_rad),4)])*step # the minus value is due to the fact that the fly has a fipped view of the scene
+
+def reflect_angle(angle):
+    
+    """ find the reflected angle across the x axis. this is needed when a mirror is in the stimulus projection path, since the mirror flips 
+    the image across the x axis"""
+    # check if angle is in [0, 360)
+    if angle < 0 or angle >= 360:
+        raise ValueError("The angle must be in the range [0, 360)")
+
+        
+    if angle <= 180:
+        return 180 - angle
+
+    # if angle is in [180, 360), the reflected angle is 540 - angle
+    else:
+        return 540 - angle
     
