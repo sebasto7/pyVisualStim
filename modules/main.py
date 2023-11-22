@@ -708,16 +708,16 @@ def main(path_stimfile):
         try:
             win.saveMovieFrames(saving_path)
         except:
-            print('>>> win.saveMovieFrames failed to generate the .gif file \n using imageio as alternative')
+            print('>>> win.saveMovieFrames failed to generate the .gif file \n check the epoch specidif movie folder')
                     # Set the input folder containing .png files
-            input_folder = os.path.join(config.OUT_DIR,'Last_stim_movie_frames')
-            for folder_path, _, _ in os.walk(input_folder):
-                # Set the saving path for the movie file (e.g., .mp4)
-                saving_path = os.path.join(folder_path, 'stimulus.mp4')
-                # Set the frames per second (fps) for the movie
-                fps = config.FRAMERATE
-                # Create the movie from .png files
-                create_movie_from_png(folder_path, saving_path, fps)
+        input_folder = os.path.join(config.OUT_DIR,'Last_stim_movie_frames')
+        for folder_path, _, _ in os.walk(input_folder):
+            # Set the saving path for the movie file (e.g., .mp4)
+            saving_path = os.path.join(folder_path, 'stimulus.mp4')
+            # Set the frames per second (fps) for the movie
+            fps = config.FRAMERATE
+            # Create the movie from .png files
+            create_movie_from_png(folder_path, saving_path, fps)
 
         win.close()
         core.quit()

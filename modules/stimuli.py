@@ -183,16 +183,16 @@ def field_flash(exp_Info,bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, win
 
         if exp_Info['saving_movie_frames']:
                     
-                    # Capture the frame
-                    frame_image = win.getMovieFrame(buffer='back')
+            # Capture the frame
+            frame_image = win.getMovieFrame(buffer='back')
 
-                    # Save the frame to a file (e.g., as individual images)
-                    # Create epoch folder
-                    epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
-                    os.makedirs(epoch_folder ,exist_ok=True)
-                    file_name = f'frame_{frameN:03d}.png'
-                    save_path = os.path.join(epoch_folder, file_name)
-                    frame_image.save(save_path)
+            # Save the frame to a file (e.g., as individual images)
+            # Create epoch folder
+            epoch_folder = os.path.join(config.OUT_DIR,f'Last_stim_movie_frames/Epoch{epoch}')
+            os.makedirs(epoch_folder ,exist_ok=True)
+            file_name = f'frame_{frameN:03d}.png'
+            save_path = os.path.join(epoch_folder, file_name)
+            frame_image.save(save_path)
 
         win.flip() # swap buffers
         reset_bar_position = True
@@ -307,10 +307,6 @@ def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global
                     save_path = os.path.join(epoch_folder, file_name)
                     frame_image.save(save_path)
 
-        win.flip() # swap buffers
-        reset_bar_position = True
-        start_frame = start_frame + frame_shift
-
         win.flip()
         # #SavingMovieFrames
         # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
@@ -358,7 +354,8 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
             if bar_number == 1:
                 space_ls.append(0.0)
             else:
-                space_ls.append(inter_space * i)
+                #space_ls.append(inter_space * i) # original line, seb debugging
+                space_ls.append(inter_space) # This worked!!! but, why??
 
     except:
         bar_number = 1
@@ -377,16 +374,17 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
 
         #Resetting sisters bar possition for next frame
         if reset_bar_position: # event avoided for first iteration (frame)
+            sum_corretion = sum(space_ls)
             if bar.ori == 0:
                 if direction == "right":
-                    bar.pos[0] = bar.pos[0] + sum(space_ls)
+                    bar.pos[0] = bar.pos[0] + sum_corretion 
                 elif direction == "left":
-                    bar.pos[0] = bar.pos[0] - sum(space_ls)
+                    bar.pos[0] = bar.pos[0] - sum_corretion 
             elif bar.ori == 90 :
                 if direction == "up":
-                    bar.pos[1] = bar.pos[1] + sum(space_ls)
+                    bar.pos[1] = bar.pos[1] +  sum_corretion 
                 elif direction == "down":
-                    bar.pos[1] = bar.pos[1] - sum(space_ls)
+                    bar.pos[1] = bar.pos[1] -  sum_corretion 
 
         # As long as tau, draw FOREGROUND (> sign direction)
         if global_clock.getTime()-duration_clock >= tau:

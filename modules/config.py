@@ -114,7 +114,7 @@ LUM_MEASURED = [0, 0.05, 0.05,0.05,0.13,0.23,0.35,0.53,0.73,0.9,0.98] # Any unit
 LUM_MEASURED = [0.03, 0.05, 0.05,0.07,0.08,0.11,0.12,0.15,0.17,0.20,0.23] # Any units
 if MODE == 'patternMode':
     GAMMA_LS = [1,1,1] # Gamma for each channel [R,G,B]
-    COLOR_ON = [1,1,1] # 1 or 0 for [R,G,B]
+    COLOR_ON = [0,1,1] # 1 or 0 for [R,G,B]
 elif MODE == 'videoMode':
     GAMMA_LS = [1,1,1.8] # Gamma for each channel [R,G,B]
     COLOR_ON = [0,0,1] # 1 or 0 for [R,G,B]
