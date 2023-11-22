@@ -17,6 +17,7 @@ import numpy as np
 import copy
 import time
 import cv2
+import random
 import os
 
 from modules.helper import *
@@ -649,7 +650,7 @@ def stim_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock
                 raise StopExperiment
 
             #Geeting RGB values for the texture
-            rgb_t = numpy.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
+            rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = -1 # All R value to -1
             rgb_t[:,:,1] = -1 # All G value to -1
             rgb_t[:,:,2] = t
@@ -829,8 +830,8 @@ def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_ar
 
 
 
-    output_dir = 'F:\\SebastianFilesExternalDrive\\Science\\PhDAGSilies\\2pData Python_data\\Trash'
-   #  fig1.savefig('{}\\{}%MC_{}_SNR.png'.format(output_dir,stimdict['michealson.contrast'][-1]*100,output_value))
+   # output_dir = 'F:\\SebastianFilesExternalDrive\\Science\\PhDAGSilies\\2pData Python_data\\Trash'
+   # fig1.savefig('{}\\{}%MC_{}_SNR.png'.format(output_dir,stimdict['michealson.contrast'][-1]*100,output_value))
    # fig1.savefig('{}\\{}%MC_{}_SNR.pdf'.format(output_dir,stimdict['michealson.contrast'][-1]*100,output_value))
 
     return (out, lastDataFrame, lastDataFrameStartTime)

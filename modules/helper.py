@@ -834,3 +834,61 @@ def reflect_angle(angle):
     else:
         return 540 - angle
     
+def random_persistent_behavior_vector(seeds,frames,choices_dur):
+    
+    """ this function uses a random seed to create a list of random numbers from a choice list 
+        the choice list represents the range of durations possible from where values are drawn based on an
+        uniform distribution
+        
+        output is a list of numbers which sum is equal or higher than the number of frames"""
+
+    if frames>20000:
+        raise Exception ('seems like this is too many frames. consider if this is necessary ')
+
+    final_vectors = []
+    
+    for local_seed in seeds:
+        local_vector = []
+        np.random.seed(local_seed)
+        while np.sum(local_vector)<frames:
+            local_vector.append(np.random.choice(choices_dur))
+
+        final_vectors.append(local_vector)
+    return final_vectors
+
+def random_persistent_values(persistent_behavior_vectors,seeds,frames,possible_values,size):
+
+    """ using the output of random_persistent_behavior_vector(seeds,frames,choices_dur) this function 
+    draws possible values from an uniform distribution to populate or modify a noise stimulus
+    
+    seeds: random seeds to draw values (as many as persistent behavior vectors are required
+    frames: lenght of stimulus in frames
+    possible values: the set of values from which is possible to choose
+    size: the size of a frame of output, if youre building a video, then size is (x,y) dimensions
+          if you are for example modifying a frames by shifting one dimension, then size is (1)... 
+          
+    output: chosen random values based on persistent behavior vector and a uniform distribution"""
+
+    output_values=[]
+    
+    for vector,local_seed in zip(persistent_behavior_vectors,seeds):
+        if len(size)==2:
+            local_outputvals = np.zeros((np.sum(vector),size[0],size[1]))
+        else:
+            local_outputvals = np.zeros((np.sum(vector)))
+        np.random.seed(local_seed)
+        count=0
+        for ix,repeats in enumerate(vector):
+            if len(size)==2:
+                value_movement = np.random.choice(possible_values,size=(size[0],size[1]))
+                local_outputvals[count:count+repeats,:,:] = value_movement[np.newaxis,:,:]
+            else:          
+                value_movement = np.random.choice(possible_values,size=(1))
+                local_outputvals[count:count+repeats] = value_movement
+            count=count+repeats
+
+        if len(size)==2:
+            output_values.append(local_outputvals[:frames,:,:])
+        else:
+            output_values.append(local_outputvals[:frames])
+    return output_values
