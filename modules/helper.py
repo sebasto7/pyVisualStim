@@ -4,7 +4,7 @@
 from __future__ import division
 from collections import defaultdict
 import PyDAQmx as daq
-import numpy
+import numpy as np
 import datetime
 import os
 import imageio
@@ -29,7 +29,7 @@ class Viewpositions(object):
         self._viewpos = []
 
         try:
-            self._viewpos = numpy.genfromtxt(filename, dtype=None)
+            self._viewpos = np.genfromtxt(filename, dtype=None)
         except ValueError:
             print ('Viewpositions could not be read. Error msg:')
             raise
@@ -261,7 +261,7 @@ def shuffle_epochs(randomize,no_epochs):
     """
     if randomize == 0.0:
         # dont shuffle epochs
-        index = numpy.zeros((no_epochs,1))
+        index = np.zeros((no_epochs,1))
         index = index.astype(int)
         for ii in range(0,no_epochs):
             index[ii] = ii
@@ -269,25 +269,25 @@ def shuffle_epochs(randomize,no_epochs):
     elif randomize == 1.0:
         # shuffle epochs randomly, except epoch 0
         # every 2nd epochchoose == 0
-        index = numpy.zeros((no_epochs-1,1))
+        index = np.zeros((no_epochs-1,1))
         index = index.astype(int)
 
         for ii in range(0,no_epochs-1):
             index[ii] = ii+1
 
-        # numpy.random.seed(config.SEED)
-        numpy.random.shuffle(index) # Actual shuffling
+        # np.random.seed(config.SEED)
+        np.random.shuffle(index) # Actual shuffling
 
     elif randomize == 2.0:
         # shuffle epochs randomly
-        index = numpy.zeros((no_epochs,1))
+        index = np.zeros((no_epochs,1))
         index = index.astype(int)
 
         for ii in range(no_epochs):
             index[ii] = ii
 
-        # numpy.random.seed(config.SEED)
-        numpy.random.shuffle(index) # Actual shuffling
+        # np.random.seed(config.SEED)
+        np.random.shuffle(index) # Actual shuffling
 
 
     return index
@@ -471,8 +471,8 @@ def max_angle_from_center(screen_width, distance):
 
     """
 
-    max_ang = numpy.arctan((screen_width/2) / distance)
-    max_ang = abs(numpy.degrees(max_ang))
+    max_ang = np.arctan((screen_width/2) / distance)
+    max_ang = abs(np.degrees(max_ang))
 
 
     return max_ang
@@ -497,8 +497,8 @@ def max_angle_from_edge(screen_width, distance):
 
     """
 
-    max_ang = numpy.arctan((screen_width) / distance)
-    max_ang = (abs(numpy.degrees(max_ang)))
+    max_ang = np.arctan((screen_width) / distance)
+    max_ang = (abs(np.degrees(max_ang)))
 
 
     return max_ang
@@ -538,8 +538,8 @@ def position_x(stimdict, epoch, screen_width, distance, seed):
         xmax = hor_extent
 
 
-    xpos = numpy.arange(xmin, xmax, bar_distance)
-    seeder = numpy.random.RandomState(seed)
+    xpos = np.arange(xmin, xmax, bar_distance)
+    seeder = np.random.RandomState(seed)
     seeder.shuffle(xpos)
 
     return xpos
@@ -588,9 +588,9 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
         ymin = -ver_extent
         ymax= ver_extent
 
-    ypos = numpy.arange(ymin, ymax, bar_distance)
+    ypos = np.arange(ymin, ymax, bar_distance)
     ypos = ypos*-1 #-1 to move downswards with the stimulus
-    seeder = numpy.random.RandomState(seed)
+    seeder = np.random.RandomState(seed)
     seeder.shuffle(ypos)
 
 
@@ -770,7 +770,7 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     
     # define cuadrant of edge initial location
 
-    x=round(1*numpy.cos(numpy.deg2rad(angle)),4) # the minus is necesary for allowing the correct direction of movement (for example 0 deg is right movement then needs to start at the left)
+    x=round(1*np.cos(np.deg2rad(angle)),4) # the minus is necesary for allowing the correct direction of movement (for example 0 deg is right movement then needs to start at the left)
     if x==0:
         x_pos=0
     elif x>0:
@@ -778,26 +778,26 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     else:
         x_pos=-1
 
-    y=round(1*numpy.sin(numpy.deg2rad(angle)),4)
+    y=round(1*np.sin(np.deg2rad(angle)),4)
     if y==0:
         y_pos=0
     elif y>0:
         y_pos=1
     else:
         y_pos=-1
-    location_vector = numpy.array([x_pos,y_pos])
+    location_vector = np.array([x_pos,y_pos])
     maximum_angle=max_angle_from_center(scr_width, scr_distance)
-    maximum_diag_angle=numpy.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
-    init_pos=numpy.array([maximum_angle,maximum_angle])*location_vector
+    maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
+    init_pos=np.array([maximum_angle,maximum_angle])*location_vector
     print(f'maximum_angle: {maximum_angle}')
-    #init_pos=numpy.array([30,30])*location_vector
+    #init_pos=np.array([30,30])*location_vector
     # find the bar width for the orientation 
 
-    if numpy.abs(x)>numpy.abs(y):
-        hypotenuse= maximum_angle/numpy.abs(x)
+    if np.abs(x)>np.abs(y):
+        hypotenuse= maximum_angle/np.abs(x)
 
-    elif numpy.abs(x)==numpy.abs(y):
-        hypotenuse= maximum_angle/numpy.abs(y)
+    elif np.abs(x)==np.abs(y):
+        hypotenuse= maximum_angle/np.abs(y)
 
     else:
         hypotenuse= maximum_diag_angle
@@ -808,15 +808,15 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     shift_x= (bar.width/2)*x
     shift_y= (bar.width/2)*y
     span=bar.width
-    #init_pos = numpy.array([maximum_angle,maximum_angle])   
-    #init_pos = numpy.array([0 , 0])
+    #init_pos = np.array([maximum_angle,maximum_angle])   
+    #init_pos = np.array([0 , 0])
     return init_pos,span
 
 def find_step_decomposition(angle_dir,step):
     """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
         for example. for angle_dir =45 the movement vector will be (-cos(45),-sin(45))"""
-    angle_rad = numpy.deg2rad(angle_dir)
-    return numpy.array([-round(numpy.cos(angle_rad),4),-round(numpy.sin(angle_rad),4)])*step # the minus value is due to the fact that the fly has a fipped view of the scene
+    angle_rad = np.deg2rad(angle_dir)
+    return np.array([-round(np.cos(angle_rad),4),-round(np.sin(angle_rad),4)])*step # the minus value is due to the fact that the fly has a fipped view of the scene
 
 def reflect_angle(angle):
     

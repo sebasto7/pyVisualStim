@@ -84,8 +84,9 @@ ID_DICT['SUBJECT_ID'] = f"{DATE}-{ID_DICT['SUBJECT_ID']}"
 
 # For output file configutation
 SUBJECT_ID = ID_DICT['SUBJECT_ID']
-METAFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_meta_data' #Adds date and starting time to the files name
-OUTFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_stimulus_output'#Adds date and starting time to the files name
+TSERIES_NUMBER = ID_DICT['TSERIES_NUMBER']
+METAFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_{TSERIES_NUMBER}_meta_data' #Adds date and starting time to the files name
+OUTFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_{TSERIES_NUMBER}_stimulus_output'#Adds date and starting time to the files name
 
 # For screen configuration
 FRAMERATE = 60# Check refresh rate of your screen (here, PC monitor or projector)

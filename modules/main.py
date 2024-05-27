@@ -1018,7 +1018,7 @@ def main(path_stimfile):
         try:
             win.saveMovieFrames(saving_path)
         except:
-            print('>>> win.saveMovieFrames failed to generate the .gif file \n check the epoch specidif movie folder')
+            print('>>> win.saveMovieFrames failed to generate the .gif file \n check the epoch specifig movie folder')
                     # Set the input folder containing .png files
         input_folder = os.path.join(config.OUT_DIR,'Last_stim_movie_frames')
         for folder_path, _, _ in os.walk(input_folder):
