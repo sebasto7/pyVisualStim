@@ -3,6 +3,7 @@
 
 from __future__ import division
 from collections import defaultdict
+from random import seed
 import PyDAQmx as daq
 import numpy as np
 import datetime
@@ -787,7 +788,7 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
         y_pos=-1
     location_vector = np.array([x_pos,y_pos])
     maximum_angle=max_angle_from_center(scr_width, scr_distance)
-    maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
+    #maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
     init_pos=np.array([maximum_angle,maximum_angle])*location_vector
     print(f'maximum_angle: {maximum_angle}')
     #init_pos=np.array([30,30])*location_vector
@@ -796,21 +797,22 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     if np.abs(x)>np.abs(y):
         hypotenuse= maximum_angle/np.abs(x)
 
-    elif np.abs(x)==np.abs(y):
+    elif np.abs(x)<np.abs(y):
         hypotenuse= maximum_angle/np.abs(y)
 
     else:
-        hypotenuse= maximum_diag_angle
+        hypotenuse= np.sqrt((maximum_angle**2)*2)
     
-    #bar.width=2*(hypotenuse)
+    bar.width=(2*(hypotenuse))+10
+    print(f'bar width: bar.width')
 
     # move the bar so the edge lands either in an edge or the corner of the screen
     shift_x= (bar.width/2)*x
     shift_y= (bar.width/2)*y
     span=bar.width
-    #init_pos = np.array([maximum_angle,maximum_angle])   
+    #init_pos = np.array([init_pos[0]+shift_x,init_pos[1]+shift_y]) 
     #init_pos = np.array([0 , 0])
-    return init_pos,span
+    return init_pos#,span
 
 def find_step_decomposition(angle_dir,step):
     """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
@@ -892,3 +894,28 @@ def random_persistent_values(persistent_behavior_vectors,seeds,frames,possible_v
         else:
             output_values.append(local_outputvals[:frames])
     return output_values
+
+
+def helper_cumsum__wrap(array_towrap,max,min):
+    """
+    Calculates a wrapped cumulative sum of a 2xN array.
+    Parameters:
+    a (numpy.ndarray): A 2xN matrix where each column represents a movement in x and y directions.
+    Returns:
+    numpy.ndarray: A 2xN matrix representing the cumulative sum with wrapped boundaries.
+    """
+    if array_towrap.shape[0] != 2:
+        raise ValueError("Input array must be 2xN.")
+
+    cum_sum = np.zeros_like(array_towrap)
+    for i in range(array_towrap.shape[1]):
+        cum_sum[:, i] = array_towrap[:, i] if i == 0 else cum_sum[:, i-1] + array_towrap[:, i]
+
+        # Apply wrapping for each dimension
+        for dim in range(2):
+            while cum_sum[dim, i] > max:
+                cum_sum[dim, i] = -max + (cum_sum[dim, i] - max)
+            while cum_sum[dim, i] < -min:
+                cum_sum[dim, i] = max + (cum_sum[dim, i] + max)
+
+    return cum_sum

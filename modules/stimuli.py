@@ -45,7 +45,7 @@ def field_flash(exp_Info,bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, win
 
     win = window
     win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
-    win.color= bg_ls[epoch] # Background for selected epoch
+    win.color= bg_ls[epoch] # Background for selected epoch  # JUAN+SEB: should be commented out?
 
     # circle attributes
     if stimdict["stimtype"][epoch] == "C":
@@ -280,12 +280,14 @@ def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global
                 bar.pos = [positions[counter[1]], 0]
                 out.xPos = float(positions[counter[1]])
                 out.yPos = 0.0
+                out.theta = frameN
                 #bar.pos = [0, 0] #Seb temporary
 
             elif stimdict["bar.orientation"][epoch] == 90:
                 bar.pos = [0,positions[counter[1]]]
                 out.yPos = float(positions[counter[1]])
                 out.xPos = 0.0
+                out.theta = frameN
 
             #print(bar.pos)
             bar.draw()
@@ -297,11 +299,13 @@ def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global
         elif bar_duration <= counter[0] < (bg_duration + bar_duration - 1):
             out.xPos = float("NaN")
             out.yPos = float("NaN")
+            out.theta = frameN
             counter[0] += 1
 
         elif counter[0] == (bg_duration + bar_duration - 1):
             out.xPos = float("NaN")
             out.yPos = float("NaN")
+            out.theta = frameN
             counter[0] = 0
             counter[1] += 1 # For the next stripe
             out.boutInd = out.boutInd + 1
@@ -448,7 +452,7 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
         out.tcurr = global_clock.getTime()
         out.xPos = float(bar.pos[0])
         out.yPos = float(bar.pos[1]) # out.yPos = time.time() was a BUG !!!
-        out.theta = float(stimdict["velocity"][epoch])
+        out.theta = frameN
         # NIDAQ check, timing check and writeout
         # quick and dirty fix to run stimulus on dlp without mic
         if not stimdict["MAXRUNTIME"] == 0:
@@ -470,160 +474,22 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
             frame_image.save(save_path)
 
         win.flip() # swap buffers
+
+        # try:
+        #     if eval(stimdict['print'])==True:
+        #         win.getMovieFrame()
+        # except:
+        #     pass
+        #     # if stimdict['print'] == True:    
+        #     #     win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".png")
         reset_bar_position = True
-        #SavingMovieFrames
-        win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+        # #SavingMovieFrames
+        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+
         
     #print(f'FUNCTION ENDS: {global_clock.getTime()}')
     return (out, lastDataFrame, lastDataFrameStartTime)
 
-def drifting_MI_stripe_20dirs(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile,out, bar,dlpOK, viewpos, data,taskHandle = None, lastDataFrame = 0, lastDataFrameStartTime = 0):
-    """drifting_stripe:
-    """
-    available_ori=np.arange(0,180,18)[:-1]
-    win = window
-    win.color= bg_ls[epoch]  # Background for selected epoch
-    bar.fillColor = fg_ls[epoch]
-    bar.width = stimdict["bar.width"][epoch]
-    bar.height = stimdict["bar.height"][epoch]
-    bar.ori = random.choice(list(available_ori))
-    # set timing
-    tau = stimdict["tau"][epoch]
-    duration = stimdict["duration"][epoch]
-    framerate = config.FRAMERATE
-    # Size of your actual window (in the units chosen, normally degrees)
-    scr_width = win.scrWidthCM
-    scr_distance = win.scrDistCM
-    maxhorang = max_horizontal_angle(scr_width, scr_distance)
-    direction= random.choice([-1, 1])
-    maxhorang = maxhorang * direction # x_position should be either 1 or -1
-    maxverang = max_vertical_angle(scr_width, scr_distance)
-    maxverang = maxverang * direction # x_position should be either 1 or -1
-    
-    #Adjusting for the rectangle edge to be printed to screen edge
-    if maxhorang  > 0:
-        shift_pos = (maxhorang) + (stimdict["bar.width"][epoch]/2) # it considers the edge of the screen = (2* maxhorang) and the half width of the rectangle = (stimdict["spacing"][epoch]/2)
-    elif maxhorang  < 0:
-        shift_pos = (maxhorang) - (stimdict["bar.width"][epoch]/2)
-    # Adusting the initial x_position of the stimulus based on max horizontal angle of the screen
-    if bar.ori == 45:
-        bar.pos = (-shift_pos, shift_pos)
-    else:
-        bar.pos = (shift_pos, shift_pos)
-    #Assigning directionality to the epoch. please note. this is different from other stripe stimuli here
-    if bar.pos[0] < 0:
-        direction = "left"
-    elif bar.pos[0] > 0:
-        direction = "right"
-    
-    # "bar.initPos" attribute are present in only some stimuli
-    try: 
-        init_pos  = stimdict["bar.initPos"][epoch]
-        print(f'Initial position: {init_pos} ')
-    except:
-        init_pos = 0.0 # In case the stim input file does not have an initial position, put it to the center
-        
-    # "bar.number"  and "bar.interSpace" attributes are present in only some stimuli
-    bar_ls, space_ls = [], [] # Only implemented for vertical and horizontal bars (see bar.ori)
-    try:
-        bar_number = int(stimdict["bar.number"][epoch])
-        inter_space = stimdict["bar.interSpace"][epoch]
-        for i in range(bar_number):
-            bar_ls.append(bar)
-            space_ls.append(inter_space * i)
-                   
-    except:
-        bar_ls.append(bar)
-        space_ls.append(0.0)
-        
-    
-    # As long as duration, draw the stimulus
-    # Reset epoch timer
-    reset_bar_position = False
-    duration_clock = global_clock.getTime()
-    for frameN in range(int(duration*framerate)): # for seconds*100fps
-        # fast break on key (ESC) pressed
-        if len(event.getKeys(['escape'])):
-            raise StopExperiment
-        
-
-        #Resetting sisters bar possition for next frame
-        if reset_bar_position: # event avoided for first iteration (frame)
-            if bar.ori == 0:
-                if direction == "right":
-                    bar.pos[0] = bar.pos[0] + sum(space_ls)
-                elif direction == "left":   
-                    bar.pos[0] = bar.pos[0] - sum(space_ls)
-            elif bar.ori == 90 :
-                if direction == "right":
-                    bar.pos[1] = bar.pos[1] + sum(space_ls)
-                elif direction == "left":   
-                    bar.pos[1] = bar.pos[1] - sum(space_ls)
-            
-        
-        # As long as tau, draw BACKGROUND (> sign direction)
-        if global_clock.getTime()-duration_clock >= tau:
-            
-            # For each bar object specified by the user (see "bar.number")
-            for i,bar in enumerate(bar_ls):
-                if bar.ori == 0 :
-                    bar.pos = (bar.pos[0], init_pos) # Fixing Y position to a desire initial position
-                    # Move Stimulus with velocity per second
-                    if direction == "right": # For bars moving to the right along the x-axis
-                        bar.pos[0] = bar.pos[0]-space_ls[i] # For sister bars
-                        bar.pos += (stimdict["velocity"][epoch]/framerate,0.0)
-                    elif direction == "left": # For bars moving to the left along the x-axis
-                        bar.pos[0] = bar.pos[0]+space_ls[i] # For sister bars
-                        bar.pos -= (stimdict["velocity"][epoch]/framerate,0.0)
-                elif bar.ori == 90 :
-                    bar.pos = (init_pos,bar.pos[1]) # Fixing X osition to a desire initial position
-                    # Move Stimulus with velocity per second
-                    if direction == "right": # For bars moving to the right along the x-axis
-                        bar.pos[1] = bar.pos[1]-space_ls[i] # For sister bars
-                        bar.pos += (0.0,stimdict["velocity"][epoch]/framerate)
-                    elif direction == "left": # For bars moving to the left along the x-axis
-                        bar.pos[1] = bar.pos[1]+space_ls[i] # For sister bars
-                        bar.pos -= (0.0,stimdict["velocity"][epoch]/framerate)
-                elif bar.ori ==  45:
-                    # Move Stimulus with velocity per second
-                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
-                    if direction == "right": # For bars moving to the right along the x-axis
-                        bar.pos += (stimdict["velocity"][epoch]/framerate*np.sqrt(2),0.0)
-                    elif direction == "left": # For bars moving to the left along the x-axis
-                        bar.pos -= (stimdict["velocity"][epoch]/framerate*np.sqrt(2),0.0)
-                elif bar.ori == 135:
-                    # Move Stimulus with velocity per second
-                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
-                    if direction == "right": # For bars moving to the right along the x-axis
-                        bar.pos += (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
-                    elif direction == "left": # For bars moving to the left along the x-axis
-                        bar.pos -= (0.0,stimdict["velocity"][epoch]/framerate*np.sqrt(2))
-
-                bar.draw()
-        # store Output
-        out.tcurr = global_clock.getTime()
-        out.xPos = float(bar.pos[0])
-        out.yPos = time.time()
-        # compute the direction of movement of the present iteration 0-360 degs:
-        
-        direction_vector=bar.ori*direction
-        if direction_vector>0:
-            theta=direction_vector+180
-        else:
-            theta=-direction_vector
-        out.theta = theta # output the actual direction of movement in angle degrees
-
-        # NIDAQ check, timing check and writeout
-        # quick and dirty fix to run stimulus on dlp without mic
-        if not stimdict["MAXRUNTIME"] == 0:
-            (out.data,lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
-        write_out(outFile,out)
-        out.framenumber = out.framenumber +1
-        win.flip() # swap buffers
-        reset_bar_position = True
-        # #SavingMovieFrames
-        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
-    return (out, lastDataFrame, lastDataFrameStartTime)
 
 def stim_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
@@ -704,9 +570,10 @@ def stim_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
-def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def h_res_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, noise, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0,dirs=None):
 
     win = window
+    colorbg_scaled = float(stimdict['bg'][0]) * float(stimdict['lum_scaler'])
     colorbg = [((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1] # Background for selected epoch    
     win.color =  colorbg
     win.colorSpace = 'rgb'
@@ -714,15 +581,15 @@ def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, durati
     # set timing
     framerate = config.FRAMERATE 
 
-
+        
     # Size of your actual window (in the units chosen, normally degrees)
     scr_width = win.scrWidthCM
     scr_distance = win.scrDistCM
     maxhorang = max_angle_from_center(scr_width, scr_distance) # From the middle to one side
     maxhorang  = maxhorang  * 2 # Full screen
-
+    
     # Grating (here noise) attributes
-    noise.size= (maxhorang, maxhorang)
+
     noise.sf = 1/maxhorang
     texture=stim_texture
     #texture *= 63.0/255.0
@@ -732,16 +599,49 @@ def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, durati
 
     while global_clock.getTime()-duration_clock <= tau:  
         win.flip()
+        out.tcurr = global_clock.getTime()
+        out.theta = -1
+        out.epochchoose = -1
+        if not stimdict["MAXRUNTIME"] == 0:
+            (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
+        write_out(outFile, out)
+
+        out.framenumber = out.framenumber + 1
+
+        win.flip()
+
     print('tau_done')    
     print('tex_duration')
 
-    for count in range(texture.shape[0]):
+    if stimdict['type'] == 'Frozen':
+        timing_param = int(stimdict['duration'][epoch]/float(stimdict['frame_duration']))
+    else:
+        timing_param = texture.shape[0] 
 
-        t= texture[count,:,:]
+    #### to test movement durations
+    #prev_dir = dirs[:,0]
+    #stim_timing = global_clock.getTime()
+
+    for count in range(timing_param):
+
+        t= copy.deepcopy(texture[count,:,:])
+        #t= copy.deepcopy(texture[0,:,:])
+        t *= 2
+        t = np.where(t>-1,(t*63.0/255.0)-1,-1)
+        ### to test movement duration
+        # if count>0:
+        #     curr_dir = dirs[:,count]
+        #     #print('prev:%s,curr:%s'%(prev_dir,curr_dir))
+        #     if curr_dir[0] != prev_dir[0] or curr_dir[1] != prev_dir[1]:
+        #         print(global_clock.getTime()-stim_timing)
+        #         stim_timing = global_clock.getTime()
+        #         prev_dir = copy.deepcopy(curr_dir)
+        if count == 10:
+            print(np.unique(t))
         for frameN in range(tex_duration):
             if len(event.getKeys(['escape'])):
                 raise StopExperiment
-
+            
             #Geeting RGB values for the texture
             rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = t # All R value to -1
@@ -749,22 +649,25 @@ def h_res_noise(bg_ls,stim_texture,stimdict, epoch, window, global_clock, durati
             rgb_t[:,:,1] = t
             # for i in range(1):
             #     rgb_t[:,:,i+1] = t # Setting G and B values
-
+                
             # noise.tex = t
             noise.tex = t
+            noise.size= (maxhorang, maxhorang)
             noise.draw()
 
             out.tcurr = global_clock.getTime()
             out.theta = count
+            out.epochchoose = copy.deepcopy(epoch)
             if not stimdict["MAXRUNTIME"] == 0:
                 (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
             write_out(outFile, out)
-
+            
             out.framenumber = out.framenumber + 1
 
             win.flip()
 
     return (out, lastDataFrame, lastDataFrameStartTime)
+   
 
 
 
@@ -963,25 +866,25 @@ def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_ar
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
-def sinusoid_grating_noise(frames,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
+def sinusoid_grating_noise(exp_Info,frames,viewpos,stim_texture,stimdict, epoch, window, global_clock, duration_clock, outFile, out, grating, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
     """ every frame it shows a grating with random spatial_frequency, random orientation, and random phase
      """
-
+    
     #set window
     win = window
     colorbg = [((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1,((float(stimdict['bg'][0]*2)*63.0/255.0))-1] # Background for selected epoch    
     win.color =  colorbg
     win.colorSpace = 'rgb'
     grating.size = 200 # a size_ that will for sure fill the whole screen
-
+    
 
     #set random values of orientation, phase and spatial wavelength
     orientation_choice = range(0,360,10) # 10 degree resolution
     #orientation_choice = [0]
     SW_choice = range(10,40,5) #(in degrees) # minimum change in sw is 5 degrees according to interommatidial distance
     #SW_choice = [40]
-    phase_choice =  np.array(range(0,10,2))/10 #(in units of spatial wavelenght) at a SW of 5 deg, minimum phase change is 1 deg
-
+    phase_choice =  np.array(range(0,10,1))/10 #(in units of spatial wavelenght) at a SW of 5 deg, minimum phase change is 1 deg
+    
     np.random.seed(0)
     orientations = np.random.choice(orientation_choice,replace=True,size=(frames))
     np.random.seed(10)
@@ -989,29 +892,27 @@ def sinusoid_grating_noise(frames,stim_texture,stimdict, epoch, window, global_c
     np.random.seed(100)
     phases = np.random.choice(phase_choice,replace=True,size=(frames))
     phases = phases * SWs
-
     # set timing
     framerate = config.FRAMERATE
     tau = stimdict["tau"][epoch]
     tex_duration = int(float(stimdict['frame_duration'])* framerate)
 
+    #for count in range(frames):
+
     while global_clock.getTime()-duration_clock <= tau:  
-
+            
         win.flip()
-
-    for count in range(frames):
         #print('tau_done')    
         #print('tex_duration')
+    for count in range(frames):
         t = stim_texture 
         orientation = orientations[count]
         phase = phases[count]
         sw = SWs[count]
-        #for count in range(tex_duration):            
-
         for frameN in range(tex_duration):
             if len(event.getKeys(['escape'])):
                 raise StopExperiment
-
+            
             #Geeting RGB values for the texture
             rgb_t = np.zeros((t.shape[0],t.shape[1],3), dtype=np.float32)
             rgb_t[:,:,0] = t # All R value to -1
@@ -1019,12 +920,13 @@ def sinusoid_grating_noise(frames,stim_texture,stimdict, epoch, window, global_c
             rgb_t[:,:,1] = t
             # for i in range(1):
             #     rgb_t[:,:,i+1] = t # Setting G and B values
-
+                
             # noise.tex = t
             grating.tex = t
             grating.sf = 1/sw
             grating.ori = orientation
             grating.pos = [np.cos(np.deg2rad(orientation))*phase,np.sin(np.deg2rad(orientation))*phase]
+            grating.size = 200
             grating.draw()
 
             out.tcurr = global_clock.getTime()
@@ -1032,28 +934,20 @@ def sinusoid_grating_noise(frames,stim_texture,stimdict, epoch, window, global_c
             if not stimdict["MAXRUNTIME"] == 0:
                 (out.data, lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK, stimdict["MAXRUNTIME"], global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
             write_out(outFile, out)
-
+            
             out.framenumber = out.framenumber + 1
 
-            if stimdict['print'] == False:
-                win.flip()
-            else:
-                win.flip()
-                win.getMovieFrame()
-                
-            
 
+            win.flip()
 
-            # NIDAQ check, timing check and writeout
-            # quick and dirty fix to run stimulus on dlp without mic
-            if not stimdict["MAXRUNTIME"] == 0:
-                (out.data,lastDataFrame, lastDataFrameStartTime) = check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,taskHandle,data,lastDataFrame,lastDataFrameStartTime)
-            write_out(outFile,out)
-
-        if stimdict['print'] == True:    
-                win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".tif") #Hardcoded by JF
-
-        return (out, lastDataFrame, lastDataFrameStartTime)
+        if eval(stimdict['print'])==True:
+            win.getMovieFrame()
+            # if stimdict['print'] == True:    
+            #     win.saveMovieFrames("C:\\#Coding\\pyVisualStim\\stimuli_collection\\8.grating_WN\\pics\\_" + str(frameN) + ".png")
+    if eval(stimdict['print'])==True:
+        raise StopExperiment  
+    else:
+        return (out, lastDataFrame, lastDataFrameStartTime)       
 
 
 
