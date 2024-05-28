@@ -549,7 +549,7 @@ def main(path_stimfile):
                 if stimdict['type'] == 'Frozen':
                         number_of_frames = 4000
                         print('frozen type')
-                    else:
+                else:
                         number_of_frames = 15000
                 
                 stim_texture_ls = list()
@@ -579,7 +579,7 @@ def main(path_stimfile):
 
                 frames=number_of_frames
                 
-                                x_dim = int(80//box_size_x) # 80 deg is an approximation of the dimension of the screen, this aproximation avoids the need for huge arrays
+                x_dim = int(80//box_size_x) # 80 deg is an approximation of the dimension of the screen, this aproximation avoids the need for huge arrays
 
                 # the precise dimension of the screen is (max_angle_from_center(9,5.3)*2)
 
@@ -1399,6 +1399,7 @@ def main(path_stimfile):
 
         elif stimtype=="shift_noise":
             noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')#,pos=stim_pos,size=stim_size)
+            stim_object = noise
 
         elif stimtype[-1:] == "G":
             grating = visual.GratingStim(win,units=_units, name='grating',
