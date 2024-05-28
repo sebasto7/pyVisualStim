@@ -46,7 +46,7 @@ from psychopy import gui
 #Hard coded path for every PC, must be put of any Github folder
 print('>>> Select the file containing your recording IDs information <<<')
 print('Stim OuputFiles will be saved in the same directory')
-OUT_DIR = r'C:\Users\smolina\Documents' # Output files directory. Where to save them
+OUT_DIR = r'C:\#Coding\pyVisualStim OutputFiles' # Output files directory. Where to save them
 IDs_FILE_DIR  = gui.fileOpenDlg(OUT_DIR)
 
 
@@ -84,9 +84,8 @@ ID_DICT['SUBJECT_ID'] = f"{DATE}-{ID_DICT['SUBJECT_ID']}"
 
 # For output file configutation
 SUBJECT_ID = ID_DICT['SUBJECT_ID']
-TSERIES_NUMBER = ID_DICT['TSERIES_NUMBER']
-METAFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_{TSERIES_NUMBER}_meta_data' #Adds date and starting time to the files name
-OUTFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_{TSERIES_NUMBER}_stimulus_output'#Adds date and starting time to the files name
+METAFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_meta_data' #Adds date and starting time to the files name
+OUTFILE_NAME = f'{DATE}_{TIME}_{SUBJECT_ID}_stimulus_output'#Adds date and starting time to the files name
 
 # For screen configuration
 FRAMERATE = 60# Check refresh rate of your screen (here, PC monitor or projector)
@@ -119,6 +118,3 @@ if MODE == 'patternMode':
 elif MODE == 'videoMode':
     GAMMA_LS = [1,1,1.8] # Gamma for each channel [R,G,B]
     COLOR_ON = [0,0,1] # 1 or 0 for [R,G,B]
-
-#For visualizing stimulus for presentations
-SAVE_MOVIE = False

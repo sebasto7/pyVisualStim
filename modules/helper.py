@@ -3,11 +3,10 @@
 
 from __future__ import division
 from collections import defaultdict
+from random import seed
 import PyDAQmx as daq
 import numpy as np
 import datetime
-import os
-import imageio
 
 from modules.exceptions import MicroscopeException, StimulusTimeExceededException, GlobalTimeExceededException
 from modules import config
@@ -256,7 +255,7 @@ def shuffle_epochs(randomize,no_epochs):
     :type randomize: Integer
     :param no_epochs: Number of epochs in stimfile.
     :type no_epochs: Integer
-    :returns: numpy integer array of shuffled epoch indices.
+    :returns: np integer array of shuffled epoch indices.
 
     """
     if randomize == 0.0:
@@ -296,7 +295,7 @@ def choose_epoch(index,randomize,no_epochs,current_index):
     """Shuffles the epoch sequence according to the randomize option.
 
     :param index: Array of shuffled epoch indices.
-    :type index: Numpy int array
+    :type index: np int array
     :param randomize: 0 (choose next), 1 (every 2nd epoch choose epoch 0), 2 (choose next epoch).
     :type randomize: Integer
     :param no_epochs: Number of epochs in stimfile.
@@ -520,7 +519,7 @@ def position_x(stimdict, epoch, screen_width, distance, seed):
     :type distance: float
     :param seed: seed to be used in the pseudo-random number generation
     :type seed: int
-    :returns: NumPy integer array
+    :returns: np integer array
 
     """
     xmax = stimdict["bar.xmax"][epoch]
@@ -560,7 +559,7 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
     :type distance: float
     :param seed: seed to be used in the pseudo-random number generation
     :type seed: int
-    :returns: NumPy integer array
+    :returns: np integer array
 
     """
 
@@ -745,24 +744,31 @@ def set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,directio
 
     return direction
 
-def create_movie_from_png(input_folder, output_path, fps=24):
-    # Get all .png files in the input folder
-    image_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.png')]
-    image_files.sort()  # Sort files to ensure the correct order
+def max_angle_from_center(screen_width, distance):
 
-    # Create a list to store images
-    images = []
+    """ Returns the angular extent of the screen from the center to the edge
+    in degrees with respect to the fly
+    Assumes that the subject lies on an axis which passes through the screen
+    and that it is centered relative to the screen.
+    Thus, a perpendicular line from the subject to the screen has a degree
+    of zero. Returned value is always positive, therefore the other edge of
+    the screen has the opposite sign of the returned value.
+    It's calculated this way::
+        angle = arctan((screen width/2) /distance of subject to the screen)
+        which is the same as:
+        angle = arctan(screen width /(2*distance of subject to the screen))
+    :param screen_width: width of the screen
+    :type screen_width: float
+    :param distance: perpendicular distance of the subject to the screen
+    :type distance: float
+    :returns: float
+    """
 
-    # Read each image file and append it to the images list
-    for image_file in image_files:
-        image_path = os.path.join(input_folder, image_file)
-        image = imageio.imread(image_path)
-        images.append(image)
+    max_ang = np.arctan((screen_width/2) / distance)
+    max_ang = abs(np.degrees(max_ang))
 
-    # Write the images to a movie file
-    with imageio.get_writer(output_path, fps=fps) as writer:
-        for image in images:
-            writer.append_data(image)
+
+    return max_ang
 
 def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     
@@ -787,7 +793,7 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
         y_pos=-1
     location_vector = np.array([x_pos,y_pos])
     maximum_angle=max_angle_from_center(scr_width, scr_distance)
-    maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
+    #maximum_diag_angle=np.sqrt(2*(maximum_angle**2)) # this is the distance in angles from the center of the screen to the corner
     init_pos=np.array([maximum_angle,maximum_angle])*location_vector
     print(f'maximum_angle: {maximum_angle}')
     #init_pos=np.array([30,30])*location_vector
@@ -796,21 +802,22 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     if np.abs(x)>np.abs(y):
         hypotenuse= maximum_angle/np.abs(x)
 
-    elif np.abs(x)==np.abs(y):
+    elif np.abs(x)<np.abs(y):
         hypotenuse= maximum_angle/np.abs(y)
 
     else:
-        hypotenuse= maximum_diag_angle
+        hypotenuse= np.sqrt((maximum_angle**2)*2)
     
-    #bar.width=2*(hypotenuse)
+    bar.width=(2*(hypotenuse))+10
+    print(f'bar width: bar.width')
 
     # move the bar so the edge lands either in an edge or the corner of the screen
     shift_x= (bar.width/2)*x
     shift_y= (bar.width/2)*y
-    span=bar.width
-    #init_pos = np.array([maximum_angle,maximum_angle])   
-    #init_pos = np.array([0 , 0])
-    return init_pos,span
+    #span=bar.width
+    #init_pos = np.array([init_pos[0]+shift_x,init_pos[1]+shift_y])   
+    init_pos = np.array([0 , 0])
+    return init_pos#,span
 
 def find_step_decomposition(angle_dir,step):
     """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
@@ -833,7 +840,8 @@ def reflect_angle(angle):
     # if angle is in [180, 360), the reflected angle is 540 - angle
     else:
         return 540 - angle
-    
+
+
 def random_persistent_behavior_vector(seeds,frames,choices_dur):
     
     """ this function uses a random seed to create a list of random numbers from a choice list 
@@ -855,7 +863,6 @@ def random_persistent_behavior_vector(seeds,frames,choices_dur):
 
         final_vectors.append(local_vector)
     return final_vectors
-
 def random_persistent_values(persistent_behavior_vectors,seeds,frames,possible_values,size):
 
     """ using the output of random_persistent_behavior_vector(seeds,frames,choices_dur) this function 
@@ -891,4 +898,32 @@ def random_persistent_values(persistent_behavior_vectors,seeds,frames,possible_v
             output_values.append(local_outputvals[:frames,:,:])
         else:
             output_values.append(local_outputvals[:frames])
+
     return output_values
+
+def helper_cumsum__wrap(array_towrap,max,min):
+    """
+    Calculates a wrapped cumulative sum of a 2xN array.
+
+    Parameters:
+    a (numpy.ndarray): A 2xN matrix where each column represents a movement in x and y directions.
+
+    Returns:
+    numpy.ndarray: A 2xN matrix representing the cumulative sum with wrapped boundaries.
+    """
+    if array_towrap.shape[0] != 2:
+        raise ValueError("Input array must be 2xN.")
+
+    cum_sum = np.zeros_like(array_towrap)
+    for i in range(array_towrap.shape[1]):
+        cum_sum[:, i] = array_towrap[:, i] if i == 0 else cum_sum[:, i-1] + array_towrap[:, i]
+
+        # Apply wrapping for each dimension
+        for dim in range(2):
+            while cum_sum[dim, i] > max:
+                cum_sum[dim, i] = -max + (cum_sum[dim, i] - max)
+            while cum_sum[dim, i] < -min:
+                cum_sum[dim, i] = max + (cum_sum[dim, i] + max)
+
+    return cum_sum
+

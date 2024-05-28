@@ -3,6 +3,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from logging import raiseExceptions
+from turtle import st
 import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
@@ -68,10 +70,10 @@ def main(path_stimfile):
 
     # Store info about the experiment session
     exp_Info = {'Experiment': config.ID_DICT['EXP_NAME'],'User': config.ID_DICT['USER_ID'], 'Subject_ID': config.ID_DICT['SUBJECT_ID'],
-                'TSeries_ID': f"{config.ID_DICT['SUBJECT_ID']}-{config.ID_DICT['TSERIES_NUMBER']}",'Genotype': config.ID_DICT['GENOTYPE'],
+                'TSeries_ID': f"{config.ID_DICT['TSERIES_NUMBER']}",'Genotype': config.ID_DICT['GENOTYPE'],
                 'Condition' : config.ID_DICT['CONDITION'],'Stimulus' : config.ID_DICT['STIMULUS_ID'], 'Age' : config.ID_DICT['AGE'],
                 'Sex' : config.ID_DICT['SEX'],'ViewPoint_x': config.VIEWPOINT_X, 'ViewPoint_y':config.VIEWPOINT_Y, 'Warp': config.WARP,
-                'Projector_mode': config.MODE, 'saving_movie_frames': config.SAVE_MOVIE}
+                'Projector_mode': config.MODE}
 
     dlg = gui.DlgFromDict(dictionary=exp_Info, sortKeys=False, title="Experimental parameters")
 
@@ -127,17 +129,17 @@ def main(path_stimfile):
 
         elif stimtype == "driftingstripe":
             stimdict["stimtype"][s] = "DS"
-        
+
         elif stimdict["stimtype"][epoch] == "arbitrarydriftingstripe": 
             stimdict["stimtype"][s] = "ADS"
-            
-        elif stimdict["stimtype"][epoch] == "randomDriftingStripes":
-            stimdict["stimtype"][s] = "RDS"
-
+ 
         elif stimtype == "noise":
             stimdict["stimtype"][s] = "N"
 
         elif stimtype == "grating":
+            stimdict["stimtype"][s] = "G"
+
+        elif stimtype == "lumgrating":
             stimdict["stimtype"][s] = "G"
 
         elif stimtype == "dottygrating":
@@ -180,7 +182,6 @@ def main(path_stimfile):
         _width,_height = 1920, 1080 # Full size in my ASUS VG248 monitor
         _width,_height = 1000, 1000 # window size = 18cm in  my Lenovo laptop
         _width,_height = 500, 500 # window size = 9cm in  my Lenovo laptop
-        _width,_height = 512, 512 # window size = 9cm in  my Lenovo laptop + resizing the images for saving movie frames with imageio
 
         mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor=mon,size = [_width,_height], screen = 0,
@@ -275,7 +276,7 @@ def main(path_stimfile):
 ##############################################################################
     # Generating or loading any stimulus data if STIMULUSDATA is not NULL
     if stimdict["STIMULUSDATA"] != "NULL":
-            if stimdict["STIMULUSDATA"][0:10] == "SINUSOIDAL":
+            if stimdict["STIMULUSDATA"][0:10] == "SINUSOIDAL" or stimdict["STIMULUSDATA"][0:6] == "SQUARE":
                 _useTex = True
                 _useNoise = False
                 # Creting texture for the sinusoidal grating
@@ -298,11 +299,23 @@ def main(path_stimfile):
                     # Generate 1D wave and modulate the luminance and contrast
                     x = np.arange(dimension)
                     # Wave needs to be scaled to 0-1 so we can modulate it easier later
-                    sine_signal = (np.sin(2 * np.pi * f * x / dimension)/2 +0.5)
+                    
+                    if stimdict["STIMULUSDATA"][0:10] == "SINUSOIDAL":
+                        sine_signal = (np.sin(2 * np.pi * f * x / dimension)/2 +0.5)
 
-                    # Scaling the signal
-                    #It stills need to me done differently. the MContrast scaling is not properly working and the scaling is not symmetric.
-                    stim_texture  = (sine_signal  * 2*(FG - BG)* (63.0/255.0))-1 + (BG*(63.0/255.0)*2)# Scaling the signal to [-1,1] range, from 8bit to 6bit range and  to chosen MContrast
+                        # Scaling the signal
+                        #It stills need to me done differently. the MContrast scaling is not properly working and the scaling is not symmetric.
+                        stim_texture  = (sine_signal  * 2*(FG - BG)* (63.0/255.0))-1 + (BG*(63.0/255.0)*2)# Scaling the signal to [-1,1] range, from 8bit to 6bit range and  to chosen MContrast
+                    
+                    elif stimdict["STIMULUSDATA"][0:6] == "SQUARE":
+                        
+                        FG = (1+ con)/2 # this calculation of contrast is valid for a constant mean luminance of 0.5, assuming michealson contrast
+                        BG = 1-FG # this calculation of contrast is valid for a constant mean luminance of 0.5
+                        x[0:64] = (FG * 2*(63.0/255.0)) -1
+                        x[64:]= (BG * 2*(63.0/255.0)) -1
+                        x=np.roll(x,-32)
+                        stim_texture= x
+                    
                     stim_texture_min = np.min(stim_texture)
 
                     # Making either 1D or 2D sine wave
@@ -372,11 +385,13 @@ def main(path_stimfile):
                 choiseArr = [0,0.5,1]
                 z= 10000 # z- dimension (here frames presented over time)
                 if int(stimdict["texture.hor_size"][1]) == 1:
+                    print("you are there!")
                     x= 1 # x-dimension
                     y = int(stimdict["texture.vert_size"][1]) # y-dimension
                     np.random.seed(config.SEED)
                     stim_texture= np.random.choice(choiseArr, size=(z,x,y))
                     stim_texture = np.repeat(stim_texture,int(stimdict["texture.vert_size"][1]),axis=1)
+                    print(stim_texture)
                 elif int(stimdict["texture.vert_size"][1]) == 1:
                     x= int(stimdict["texture.hor_size"][1])
                     y = 1
@@ -391,7 +406,6 @@ def main(path_stimfile):
 
                 stim_texture_ls.append(stim_texture)
                 noise_array_ls.append(None)
-
 
             elif stimdict["STIMULUSDATA"] =="Hi-res-noise":
                 # super resolution approach (Pamlona et al. 2022)
@@ -530,10 +544,16 @@ def main(path_stimfile):
                   
                   this stimulus type requires a speed of movement"""
 
-                grayvalues = np.array([0,2.0]).astype('float64')
-                grayvalues = np.where(grayvalues>-1,(grayvalues*63.0/255.0)-1,-1)
+                grayvalues = np.array([0,1]).astype('int8')
+                #grayvalues = np.where(grayvalues>-1,(grayvalues*63.0/255.0)-1,-1)
                 #print(grayvalues)
-                number_of_frames=15000
+                
+                if stimdict['type'] == 'Frozen':
+                    number_of_frames = 4000
+                    print('frozen type')
+                else:
+                    number_of_frames = 15000
+
                 stim_texture_ls = list()
                 noise_array_ls = list()
                 moves = np.zeros((2, number_of_frames)) # 2 directions: x and y. 15000 random choices of shift that should be divisible by the shift resolution
@@ -541,10 +561,14 @@ def main(path_stimfile):
                 # set the resolution of the stimulus which is defined by the minimal movement posible, which is the lenght of movement given the speed and the framerate
                 # ideally this should be an integer that should be able to divide without residue the final matrix size
                 
-                step = int(float(stimdict['frame_duration'])*float(stimdict['speed']))
+                #step = int(float(stimdict['frame_duration'])*float(stimdict['speed']))
 
-                if 80%step != 0:
-                    raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
+                step = 0.05*20 # maybe this should be hardcoded  ---- time resolution(s)*speed(deg/s)
+                minimum_step = step*np.cos(np.deg2rad(45))
+                allowed_box_sizes = [2,4,5,8,10,16] # more can be added
+
+                # if 80%step != 0:
+                #     raise Exception('in the current implementation, the code only accepts divisors of 80 as step')
                 
                 # set posible steps in units of stimulus pixels (the real step choice is -1*step,0,1*step)
                 step_choices = [-1,0,1]
@@ -552,92 +576,132 @@ def main(path_stimfile):
 
                 # set stimuli dimensions
                 
-                box_size_x = stimdict["Box_sizeX"] # first guess: this number should be around 20 
-                box_size_y = stimdict["Box_sizeY"]
+                box_size_x = stimdict["Box_sizeX"] # before it was 5
+                box_size_y = stimdict["Box_sizeY"] # before it was 5
 
                 frames=number_of_frames
                 
-                if 80%box_size_x == 0 and 80%box_size_y ==0:                
-                            x_dim = int(80/box_size_x) #80 is the size of the screen in degrees, for now this is hardcoded
-                            y_dim = int(80/box_size_y)
-                else:
-                    raise Exception ('in the current implementation, the code only accepts divisors of 80 as box_size')
+                       
+                x_dim = int(80//box_size_x) # 80 deg is an approximation of the dimension of the screen, this aproximation avoids the need for huge arrays
                 
-                try:
-                    np.random.seed(stimdict["seed"])
-                    print(stimdict["seed"])
-                except:
-                    np.random.seed(3)
-                    print(3)
-                #test = stimdict["Test"]
-
-                final_size=int(80/step)
-
+                # the precise dimension of the screen is (max_angle_from_center(9,5.3)*2)
                 
-                if stimdict['persistent_movement']: # if we want the field to move consistently for a number of frames
+                y_dim = int(80//box_size_y)
+
+                minimum_size_step_based = int(80//step) #(max_angle_from_center(9,5.3)*2)
+                minimum_size_diag_step = int(80//minimum_step)
+                
+                # temporal hardcoded DIAGONAL STEP to have an array size that reasonably approximates a diagonal step 
+                # for speed 20deg and refresh period of 25ms  
+                # at box size 5, speed 20 and refresh rate 0.05 minimum_size_diag_step 
+                # can be approx to 120
+
+                minimum_size_diag_step = 120 #this number has no physical meaning. it is an approximation to make the diagonal moves as fast as the lateral approx
+                
+                #minimum matrix dimensions that allow for aproxx equal speed in diagonal directions
+                minimum_sizex=np.lcm.reduce([minimum_size_step_based,minimum_size_diag_step,x_dim]) 
+                minimum_sizey=np.lcm.reduce([minimum_size_step_based,minimum_size_diag_step,y_dim])
+
+                # define scaling factors
+                upscale_factor_x = int(minimum_sizex/x_dim)
+                upscale_factor_y = int(minimum_sizey/y_dim)
+
+                resolutionx = 80/minimum_sizex
+                resolutiony = 80/minimum_sizey
+                step_multiplierx = int(step/resolutionx)
+                step_multipliery = int(step/resolutiony)
+                step_multiplier_diag = int(minimum_step/resolutionx)
+                max_duration_scaler = int(float(stimdict['max_distance'])/resolutionx) # maximum movement posible(deg)/resolution. in this case max movement is stimdict['max_distance']
+                                                      # this means the maximum duration of movement allows for up to stimdict['max_distance']. before it was hardcoded to 30
+                min_duration_scaler = int(float(stimdict['min_distance'])/resolutionx) # before min_dist was hardcoded to 2 
+
+                wrap_x = [-minimum_sizex//2 + 1 if minimum_sizex%2==0 else -minimum_sizex//2,  minimum_sizex//2]
+
+
+                if eval(stimdict['persistent_movement']): # if we want the field to move consistently for a number of frames
                     # it takes tha same as the dimension number in steps to reach the original position
                    
-                    choices_of_duration = np.array(range(1,26,step))# the maximum duration of a moving bout is determined by the maximum degree of movement allowed (26deg)
-                    
-                    
-                    persistant_val1,persistant_val2 = random_persistent_behavior_vector([4,5],number_of_frames,choices_of_duration) # function in helpers
-                    moves1,moves2  =  random_persistent_values([persistant_val1,persistant_val2],[0,10],number_of_frames,step_choices,[1]) # function in helpers
+                    choices_of_duration = np.array(range(min_duration_scaler,max_duration_scaler))# the maximum duration of a moving bout is determined by the maximum degree of movement allowed (26deg)
 
+                    #temporal
+                    #choices_of_duration = np.array([30,30])
+
+                    if stimdict['type'] == 'Frozen':
+                        persistant_val1,persistant_val2 = random_persistent_behavior_vector([8,9],number_of_frames,choices_of_duration) # function in helpers
+                        moves1,moves2  =  random_persistent_values([persistant_val1,persistant_val2],[11,21],number_of_frames,step_choices,[1]) # function in helpers
+                        print('pers_movement_frozen')
+                    else:
+                        persistant_val1,persistant_val2 = random_persistent_behavior_vector([4,5],number_of_frames,choices_of_duration) # function in helpers
+                        moves1,moves2  =  random_persistent_values([persistant_val1,persistant_val2],[0,10],number_of_frames,step_choices,[1]) # function in helpers
+                        print('pers_movement')
                     
                     moves[0,:] = moves1
                     moves[1,:] = moves2
-                    moves=np.cumsum((moves),axis=1)
+                    copy_moves = copy.deepcopy(moves)
+                    #moves=np.cumsum((moves),axis=1).astype('int')
+                    moves = helper_cumsum__wrap(moves,wrap_x[1],wrap_x[0])
+                    #print('pers_movement')
 
                     # choose persistent luminances to enhance the motion signal relative to the luminance one
-
-                    persistant_lum = random_persistent_behavior_vector([5],number_of_frames,choices_of_duration)
-                    noise_texture = random_persistent_values(persistant_lum,[3],number_of_frames,grayvalues,size=[x_dim,y_dim])
-                    noise_texture = noise_texture[0]
                 else:
 
                     for i in range(0,2): # x,y shift arrays
                             np.random.seed(i)
                             moves[i,:]= np.random.choice(step_choices, number_of_frames, replace=True)#range(int(np.floor(-38/stimdict["Shift_resolution"])),int(np.floor(40/stimdict["Shift_resolution"]))), number_of_frames, replace=True) #this range determines the x multiples of shifts 
                     
-                    moves=np.cumsum((moves),axis=1)
-                    # if test:
-                    # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
-                    # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
-                    # else:
-                    try:
-                        np.random.seed(stimdict["seed"])
-                        print(stimdict["seed"])
-                    except:
-                        np.random.seed(3)
-                        print(3)
+                    #moves=np.cumsum((moves),axis=1)                
+                    moves = helper_cumsum__wrap(moves,wrap_x[1],wrap_x[0])
+                
+                #a=eval(stimdict['persistent_luminance'])
+                
+                if eval(stimdict['persistent_luminance'])==True:
+                    #print('persistant lum')
+                    if stimdict['type'] == 'Frozen':
+                        print('persistant lum_Frozen')
+                        persistant_lum = random_persistent_behavior_vector([7],number_of_frames,choices_of_duration)
+                        noise_texture = random_persistent_values(persistant_lum,[15],number_of_frames,grayvalues,size=[x_dim,y_dim])
+                        noise_texture = noise_texture[0].astype('int8')
+                    else:
+
+                        print('persistant lum')
+                        persistant_lum = random_persistent_behavior_vector([5],number_of_frames,choices_of_duration)
+                        noise_texture = random_persistent_values(persistant_lum,[3],number_of_frames,grayvalues,size=[x_dim,y_dim])
+                        noise_texture = noise_texture[0].astype('int8')
+
+                    
+                
+                    #     # if test:
+                    #     # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
+                    #     # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
+                    #     # else:
+                else:
+                    print('normal lum')
+                    # try:
+                    #     np.random.seed(stimdict["seed"])
+                    #     print(stimdict["seed"])
+                    # except:
+                    np.random.seed(3)
+                    # print(3)
                     noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
                 
+                # scale luminance
+                noise_texture = noise_texture*float(stimdict['lum_scaler'])
+                print('lum:%s'%(float(stimdict['lum_scaler'])))
+
                 #upscale the stim array to be able to shift it in small steps
                 
-                minimum_size_based_on_step = final_size
-                minimum_size_based_on_boxsizex = x_dim
-                minimum_size_based_on_boxsizey = y_dim
-
-                minimum_sizex = np.lcm(minimum_size_based_on_step,minimum_size_based_on_boxsizex)
-                minimum_sizey = np.lcm(minimum_size_based_on_step,minimum_size_based_on_boxsizey)
-
-                upscale_factor_x = minimum_sizex/x_dim
-                upscale_factor_y = minimum_sizey/y_dim
-
-                resolutionx = 80/minimum_sizex
-                resolutiony = 80/minimum_sizey
-                step_multiplierx = step/resolutionx
-                step_multipliery = step/resolutiony
-
                 noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
                 noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
 
-                # scale the moves accordingly
-                moves[0,:] = moves[0,:]* step_multiplierx
-                moves[1,:] = moves[1,:]* step_multipliery
+                # scale the moves accordingly. diagonal movements require a different scaling
+                for i in range(moves.shape[1]):
+                    if int(np.abs(moves[0,i])) == 1 and int(np.abs(moves[1,i])) == 1:
+                        moves[:,i] *= step_multiplier_diag
+                    else:
+                        moves[0,i] *= step_multiplierx
+                        moves[1,i] *= step_multiplierx
 
-                #copy_texture = copy.deepcopy(noise_texture)
-                #print(np.unique(noise_texture))
+
                 for frame in range(int(number_of_frames)):
                     
                     noise_texture[frame,:,:] = np.roll(noise_texture[frame,:,:], int(moves[0,frame]),axis=0)
@@ -648,36 +712,333 @@ def main(path_stimfile):
                     ##end of test
                     
 
-                if stimdict["print"] == 'True':
-                    for frame in range(int(number_of_frames/100)):
-                        plt.figure()
-                        plt.imshow(noise_texture[frame,:,:],cmap='gray')
-                        plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\_" + str(frame) + ".jpg")
-                        plt.close()
+                # if stimdict["print"] == 'True':
+                #     for frame in range(int(number_of_frames/100)):
+                #         plt.figure()
+                #         plt.imshow(noise_texture[frame,:,:],cmap='gray')
+                #         plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\_" + str(frame) + ".jpg")
+                #         plt.close()
                 #     sys.exit()
                 stim_texture_ls.append(noise_texture)
                 
                 if stimdict["print"] == 'True':
 
-                    plt.figure()
-                    plt.hist(moves[0,:],bins=np.arange(-20,22,1))
-                    plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_shift.jpg"%(0,stimdict["Box_sizeX"],stimdict["Shift_resolution"]))
-                    plt.close('all')
-                    plt.figure()
-                    plt.hist(moves[1,:],bins=np.arange(-20,22,1))
-                    plt.savefig("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_shift.jpg"%(1,stimdict["Box_sizeX"],stimdict["Shift_resolution"]))
-                    plt.close('all')
+                    # plt.figure()
+                    # plt.hist(moves[0,:],bins=np.arange(-20,22,1))
+                    # plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_step.jpg"%(0,stimdict["Box_sizeX"],step))
+                    # plt.close('all')
+                    # plt.figure()
+                    # plt.hist(moves[1,:],bins=np.arange(-20,22,1))
+                    # plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_step.jpg"%(1,stimdict["Box_sizeX"],step))
+                    # plt.close('all')
 
                     print(np.unique(stim_texture_ls))
                     print(np.max(np.array(stim_texture_ls)))
                     copy_texture = np.squeeze(np.array(stim_texture_ls)) # normalize the stimulus before saving)
                     print(copy_texture.shape)
                     print(np.unique(copy_texture))
-                    np.save("C:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics\\stimulus_%sdegbox_%sdeg_shift.npy"%(stimdict["Box_sizeX"],stimdict["Shift_resolution"]),copy_texture)
-                    
+                    #np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_%sdegbox_%sdeg_step.npy"%(stimdict["Box_sizeX"],step),copy_texture)
+                    if stimdict["type"]=='Frozen':
+                        copy_texture = copy_texture.astype('int8')
+                        np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\frozenstim_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_distance'])),stimdict["Box_sizeX"],step),copy_texture)
+                        np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\moves_frozenstim_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_distance'])),stimdict["Box_sizeX"],step),copy_moves)
+                    else:
+                        copy_texture = copy_texture.astype('int8')
+                        np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_distance'])),stimdict["Box_sizeX"],step),copy_texture)
+                        np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\moves_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_distance'])),stimdict["Box_sizeX"],step),copy_moves)
 
                     sys.exit()
+                
+                if stimdict['type'] == 'Frozen':
+                    stim_texture_ls = []
+                    for e in range(stimdict["EPOCHS"]):
+                        stim_texture_ls.append(noise_texture)
 
+            elif stimdict["STIMULUSDATA"] =="random_moving_binary_manyspeeds_pluzfrozen": 
+                """ this is a stimulus intended to more strongly stimulate direction selective neurons.
+                  
+                  initially this stimulus is hardcoded to have binary luminance changes
+                  
+                  this stimulus type implements multiple speeds of movement and includes a frozen sequence that repeats """
+            
+                grayvalues = np.array([0,1]).astype('int8')
+                #grayvalues = np.where(grayvalues>-1,(grayvalues*63.0/255.0)-1,-1)
+                #print(grayvalues)
+                update_rate = 0.05 
+                
+                frozen_frames = int((1*60)/update_rate) # planned to last 1 minute with a refresh rate of 50ms
+                #print( 'frozfr',frozen_frames)
+                number_of_frames = int((12*60)/update_rate) # planned to last 12 minutes with a refresh rate of 50ms
+
+                frozen_indices = [[0,1200],[3600,4800],[7200,8400],[10800,12000]] # in a 12 minute duration, put 4 repetitions of frozen noise
+
+                stim_texture_ls = list()
+                noise_array_ls = list()
+                moves = np.zeros((2, number_of_frames)) # 2 directions: x and y. 15000 random choices of shift that should be divisible by the shift resolution
+
+                # set the resolution of the stimulus which is defined by the minimal movement posible, which is the lenght of movement given the speed and the framerate
+                # ideally this should be an integer that should be able to divide without residue the final matrix size
+                
+                #step = int(float(stimdict['frame_duration'])*float(stimdict['speed']))
+
+                step = update_rate*20 # maybe this should be hardcoded  ---- time resolution(s)* minimal speed (this should allow for 0.5deg minimal movement
+                               # but will increase in turn the size of the array passed. that could be risky)
+                               # minimal speed is hardcoded at 10deg/s
+                minimum_step = step*np.cos(np.deg2rad(45))
+                
+                allowed_box_sizes = [2,4,5,8,10,16] # more can be added
+
+
+                step_choices = [-1,1,-2,0,2,-3,3] # adding more step choices adds more speed options: 10,20,40 deg/s
+                               
+                # set stimuli dimensions
+                
+                box_size_x = stimdict["Box_sizeX"] 
+                box_size_y = stimdict["Box_sizeY"] 
+
+                frames=number_of_frames
+                
+                       
+                x_dim = int(80//box_size_x) # 80 deg is an approximation of the dimension of the screen, this aproximation avoids the need for huge arrays
+                
+                # the precise dimension of the screen is (max_angle_from_center(9,5.3)*2)
+                
+                y_dim = int(80//box_size_y)
+
+                minimum_size_step_based = int(80//step) #(max_angle_from_center(9,5.3)*2)
+                minimum_size_diag_step = int(80//minimum_step)
+                
+                # temporal hardcoded DIAGONAL STEP to have an array size that reasonably approximates a diagonal step 
+                # for speed 20deg and refresh period of 25ms  
+                # at box size 5, speed 20 and refresh rate 0.05 minimum_size_diag_step 
+                # can be approx to 120
+
+                minimum_size_diag_step = 120 #this number has no physical meaning. it is an approximation to make the diagonal moves as fast as the lateral approx
+                
+                #minimum matrix dimensions that allow for aproxx equal speed in diagonal directions
+                minimum_sizex=np.lcm.reduce([minimum_size_step_based,minimum_size_diag_step,x_dim]) 
+                minimum_sizey=np.lcm.reduce([minimum_size_step_based,minimum_size_diag_step,y_dim])
+
+                # define scaling factors
+                upscale_factor_x = int(minimum_sizex/x_dim)
+                upscale_factor_y = int(minimum_sizey/y_dim)
+
+                resolutionx = 80/minimum_sizex
+                resolutiony = 80/minimum_sizey
+                step_multiplierx = int(step/resolutionx)
+                step_multipliery = int(step/resolutiony)
+                step_multiplier_diag = int(minimum_step/resolutionx)
+                max_duration_scaler = int(float(stimdict['max_duration'])/update_rate) # recommended 0.3s
+                                                      
+                min_duration_scaler = int(float(stimdict['min_duration'])/update_rate) # recommended 0.05s # input here should be in seconds. when we divide by the stimulus refresh rate, then the result is in frames
+                            
+                wrap_x = [-minimum_sizex//2 + 1 if minimum_sizex%2==0 else -minimum_sizex//2,  minimum_sizex//2]
+
+
+                if eval(stimdict['persistent_movement']): # if we want the field to move consistently for a number of frames
+                    # it takes tha same as the dimension number in steps to reach the original position
+                   
+                    choices_of_duration = np.array(range(min_duration_scaler,max_duration_scaler))# the maximum duration of a moving bout is determined by the maximum degree of movement allowed (26deg)
+
+                    persistant_val1,persistant_val2 = random_persistent_behavior_vector([4,5],number_of_frames,choices_of_duration) # function in helpers
+                    moves1,moves2  =  random_persistent_values([persistant_val1,persistant_val2],[0,10],number_of_frames,step_choices,[1]) # function in helpers
+                    print('pers_movement')
+                    #print(moves1[0:20])
+                    
+                    moves[0,:] = moves1
+                    moves[1,:] = moves2
+                    copy_moves = copy.deepcopy(moves)
+                    #moves=np.cumsum((moves),axis=1).astype('int')
+                    moves = helper_cumsum__wrap(moves,wrap_x[1],wrap_x[0])
+                    #print('pers_movement')
+
+                    # choose persistent luminances to enhance the motion signal relative to the luminance one
+                else:
+                    
+                    for i in range(0,2): # x,y shift arrays
+                            np.random.seed(i)
+                            moves[i,:]= np.random.choice(step_choices, number_of_frames, replace=True)#range(int(np.floor(-38/stimdict["Shift_resolution"])),int(np.floor(40/stimdict["Shift_resolution"]))), number_of_frames, replace=True) #this range determines the x multiples of shifts 
+                    
+                    #moves=np.cumsum((moves),axis=1)                
+                    moves = helper_cumsum__wrap(moves,wrap_x[1],wrap_x[0])
+                
+                #a=eval(stimdict['persistent_luminance'])
+                
+                if eval(stimdict['persistent_luminance'])==True:
+                    #print('persistant lum')
+                    print('persistant lum')
+                    persistant_lum = random_persistent_behavior_vector([5],number_of_frames,choices_of_duration)
+                    noise_texture = random_persistent_values(persistant_lum,[3],number_of_frames,grayvalues,size=[x_dim,y_dim])
+                    noise_texture = noise_texture[0].astype('int8')
+                
+                    #     # if test:
+                    #     # noise_texture = np.random.choice(grayvalues, size=(1,y_dim,x_dim))
+                    #     # noise_texture = np.repeat(noise_texture,repeats=15000,axis=0)
+                    #     # else:
+                else:
+                    print('normal lum')
+                    # try:
+                    #     np.random.seed(stimdict["seed"])
+                    #     print(stimdict["seed"])
+                    # except:
+                    np.random.seed(3)
+                    # print(3)
+                    noise_texture = np.random.choice(grayvalues, size=(number_of_frames,y_dim,x_dim))
+                
+                # scale luminance
+                noise_texture = noise_texture*float(stimdict['lum_scaler'])
+                print('lum:%s'%(float(stimdict['lum_scaler'])))
+
+                ###################
+                #### introduce size changes
+                ###################
+
+                if eval(stimdict['multiple_sizes']):
+                    duration_choices = np.array(range(min_duration_scaler,max_duration_scaler))
+                    posible_sizes = eval(stimdict['pos_sizes'])#[1,2,4] # this should be understood as value times x the original size. if original size is 
+                    sizes_1, sizes_2 = random_persistent_behavior_vector([500,600],number_of_frames,duration_choices)
+                    persistent_sizes_1, persistent_sizes_2 = random_persistent_values([sizes_1, sizes_2],[1050,2050],number_of_frames,posible_sizes,[1])
+                    persistent_sizes_1 = persistent_sizes_1.astype('int')
+                    persistent_sizes_2 = persistent_sizes_2.astype('int')
+                    
+                    for time_ix in range(noise_texture.shape[0]):
+                        # (full size - dim_size)/2
+                        #temporal_texture = np.kron(noise_texture[time_ix,:,:], np.ones((persistent_sizes_1[time_ix],persistent_sizes_2[time_ix])))
+                        temporal_texture = np.repeat(noise_texture[time_ix,:,:],persistent_sizes_1[time_ix],axis=0)
+                        temporal_texture = np.repeat(temporal_texture,persistent_sizes_2[time_ix],axis=1)
+                        x_slice = int((temporal_texture.shape[0]-x_dim)/2)
+                        y_slice = int((temporal_texture.shape[1]-y_dim)/2)                       
+                        noise_texture[time_ix,:,:] = temporal_texture[x_slice : x_slice + x_dim,y_slice : y_slice + y_dim]
+                        
+                ####################################
+                # add_frozen part
+                ####################################
+
+                f_moves = np.zeros((2, frozen_frames))
+
+                ####################################
+                # add_frozen part --> movements
+                ####################################
+                
+                persistant_val1,persistant_val2 = random_persistent_behavior_vector([8,9],frozen_frames,choices_of_duration) # function in helpers
+                f_moves1,f_moves2  =  random_persistent_values([persistant_val1,persistant_val2],[11,21],frozen_frames,step_choices,[1]) # function in helpers
+                print('pers_movement_frozen')
+
+                f_moves[0,:] = f_moves1
+                f_moves[1,:] = f_moves2
+                copy_moves = copy.deepcopy(f_moves)
+                #moves=np.cumsum((moves),axis=1).astype('int')
+                f_moves = helper_cumsum__wrap(f_moves,wrap_x[1],wrap_x[0])
+
+
+
+                #######introduce the moves in the bigger moves array
+
+                for interval in frozen_indices:
+                    #print('int',interval)
+                    moves[:,interval[0]:interval[1]] = f_moves
+                ###########
+                ############# create frozen luminances
+                ###########
+                if eval(stimdict['persistent_luminance'])==True:
+                    frozen_lum = random_persistent_behavior_vector([7],frozen_frames,choices_of_duration)
+                    frozen = random_persistent_values(frozen_lum,[15],frozen_frames,grayvalues,size=[x_dim,y_dim])
+                    frozen = frozen[0].astype('int8')
+                else:
+                    np.random.seed(120)
+                    # print(3)
+                    frozen = np.random.choice(grayvalues, size=(frozen_frames,y_dim,x_dim))
+                
+                ######################
+                ########### introduce frozen sizes
+                ###################
+                
+                if eval(stimdict['multiple_sizes']):
+                    duration_choices = np.array(range(min_duration_scaler,max_duration_scaler)) # the duration of a size at the minimum is a single frame, and at a maximum is user defined
+                    #posible_sizes = [1,2,4] # this should be understood as value times x the original size. if original size is 
+                    sizes_1, sizes_2 = random_persistent_behavior_vector([250,300],frozen_frames,duration_choices)
+                    persistent_sizes_1, persistent_sizes_2 = random_persistent_values([sizes_1, sizes_2],[600,800],frozen_frames,posible_sizes,[1])
+                    persistent_sizes_1 = persistent_sizes_1.astype('int')
+                    persistent_sizes_2 = persistent_sizes_2.astype('int')
+                    for time_ix in range(frozen_frames):
+                        # (full size - dim_size)/2 
+                        #temporal_texture = np.kron(noise_texture[time_ix,:,:], np.ones((persistent_sizes_1[time_ix],persistent_sizes_2[time_ix])))
+                        
+                        temporal_texture = np.repeat(frozen[time_ix,:,:],persistent_sizes_1[time_ix],axis=0)
+                        temporal_texture = np.repeat(temporal_texture,persistent_sizes_2[time_ix],axis=1)
+                        
+                        x_slice = int((temporal_texture.shape[0]-x_dim)/2)
+                        y_slice = int((temporal_texture.shape[1]-y_dim)/2)
+                        frozen[time_ix,:,:] = temporal_texture[x_slice : x_slice + x_dim,y_slice : y_slice + y_dim]
+                print('worked')
+                ############ introduce frozen luminances. but first scale the luminance
+
+                frozen = frozen*float(stimdict['lum_scaler'])
+                #print('lum:%s'%(float(stimdict['lum_scaler'])))
+
+                for interval in frozen_indices:
+                    noise_texture[interval[0]:interval[1],:,:] = frozen
+
+                #upscale the stim array to be able to shift it in small steps
+                
+                noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
+                noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+
+                # scale the moves accordingly. diagonal movements require a different scaling
+                for i in range(moves.shape[1]):
+                    if int(np.abs(moves[0,i])) != 0 and int(np.abs(moves[1,i])) != 0:
+                        moves[:,i] *= step_multiplier_diag
+                    
+                    else:
+                        moves[0,i] *= step_multiplierx
+                        moves[1,i] *= step_multiplierx
+
+
+
+                for frame in range(int(number_of_frames)):
+                    
+                    noise_texture[frame,:,:] = np.roll(noise_texture[frame,:,:], int(moves[0,frame]),axis=0)
+                    noise_texture[frame,:,:] = np.roll(noise_texture[frame,:,:], int(moves[1,frame]),axis=1)
+                    #test
+                    #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*1,axis=0)
+                    #noise_texture[frame,:,:]=np.roll(noise_texture[frame,:,:], frame*0,axis=1)
+                    ##end of test
+                    
+
+                # if stimdict["print"] == 'True':
+                #     for frame in range(int(number_of_frames/100)):
+                #         plt.figure()
+                #         plt.imshow(noise_texture[frame,:,:],cmap='gray')
+                #         plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\_" + str(frame) + ".jpg")
+                #         plt.close()
+                #     sys.exit()
+                stim_texture_ls.append(noise_texture)
+                
+                if stimdict["print"] == 'True':
+
+                    # plt.figure()
+                    # plt.hist(moves[0,:],bins=np.arange(-20,22,1))
+                    # plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_step.jpg"%(0,stimdict["Box_sizeX"],step))
+                    # plt.close('all')
+                    # plt.figure()
+                    # plt.hist(moves[1,:],bins=np.arange(-20,22,1))
+                    # plt.savefig("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_hist%s_%sdegbox_%sdeg_step.jpg"%(1,stimdict["Box_sizeX"],step))
+                    # plt.close('all')
+
+                    print(np.unique(stim_texture_ls))
+                    print(np.max(np.array(stim_texture_ls)))
+                    copy_texture = np.squeeze(np.array(stim_texture_ls)) # normalize the stimulus before saving)
+                    print(copy_texture.shape)
+                    print(np.unique(copy_texture))
+                    #np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise\\stimulus_%sdegbox_%sdeg_step.npy"%(stimdict["Box_sizeX"],step),copy_texture)
+
+                    copy_texture = copy_texture.astype('int8')
+                    np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise_manyspeeds_frozen\\stimulus_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_duration'])),stimdict["Box_sizeX"],step),copy_texture)
+                    np.save("D:\\#Coding\\pyVisualStim\\stimuli_collection\\7.High_resolution_WN\\pics_movingnoise_manyspeeds_frozen\\moves_%smaxdur_%sdegbox_%sdeg_step.npy"%(int(float(stimdict['max_duration'])),stimdict["Box_sizeX"],step),copy_moves)
+                
+                    sys.exit()
+                
+            
             elif  stimdict["STIMULUSDATA"] == "POLIGON":
                 stim_texture_ls = list()
                 noise_array_ls = list()
@@ -728,17 +1089,17 @@ def main(path_stimfile):
         elif stimtype ==  "DS":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
-            
+
         elif stimtype ==  "ADS":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
 
-        elif stimtype ==  "RDS":
-            bar = visual.Rect(win, lineWidth=0, units=_units)
-            stim_object = bar
-        
         elif stimtype == "N":
-            noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')
+            noise = visual.ImageStim(win,units=_units, name='noise')
+            stim_object = noise
+        
+        elif stimtype=="shift_noise":
+            noise = visual.GratingStim(win,units=_units, name='noise',tex='sqr')#,pos=stim_pos,size=stim_size)
             stim_object = noise
 
         elif stimtype[-1:] == "G":
@@ -909,57 +1270,70 @@ def main(path_stimfile):
 
         # Reset epoch timer
         duration_clock = global_clock.getTime()
-        print(f'STIM SELECTION STARTS: {global_clock.getTime()}')
+        #print(f'STIM SELECTION STARTS: {global_clock.getTime()}')
         try:
 
             # Functions that draw the different stimuli
             if stimdict["stimtype"][epoch] == "SSR":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1]== "C":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1]== "R":
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
             
             elif stimdict["stimtype"][epoch] == "DS":
                 #print(f'FUNCTION CALLED: {global_clock.getTime()}')
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
-            elif stimdict["stimtype"][epoch] == "RDS":
-                #print(f'FUNCTION CALLED: {global_clock.getTime()}')
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
-                                                                out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
-                
+
             elif stimdict["stimtype"][epoch] == "ADS":
                 #print(f'FUNCTION CALLED: {global_clock.getTime()}')
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
 
-
             elif stimdict["stimtype"][epoch] == "N":
+                print(f"printing epoch in noise stim: {epoch}")
+                print(len(stim_texture_ls))
+                print(len(stim_object_ls))
 
-                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(exp_Info,bg_ls,stim_texture,stimdict,epoch, win, global_clock,duration_clock,outFile,
+                print(stim_texture_ls[epoch-1])
+                
+                print(len(stim_texture_ls))
+                print(len(stim_object_ls))
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.stim_noise(bg_ls,stim_texture_ls[epoch-1],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
+            
+            elif stimdict["stimtype"][epoch] == "shift_noise":
 
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.h_res_noise(bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                                                                    out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime,dirs=copy_moves)
+            elif stimdict["stimtype"][epoch] == "Noise_G":
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.sinusoid_grating_noise(30000,viewpos,stim_texture_ls[epoch-1],stimdict,epoch,win,global_clock,duration_clock,outFile
+                                                                                      ,out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
             elif stimdict["stimtype"][epoch][-1:] == "G":
 
-                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.noisy_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch] == "DG":
 
-                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                (out, lastDataFrame, lastDataFrameStartTime)= stimuli.dotty_grating(_useNoise,_useTex,viewpos,bg_ls,stim_texture_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch][0],stim_object_ls[epoch][1],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
 
-            else: raise StimulusError(stimdict["stimtype"][epoch],epoch)
+            else: 
+                print(stimdict["stimtype"][epoch])
+                raise StimulusError(stimdict["stimtype"][epoch],epoch)
 
             # Irregular stop conditions:
             # "and not stimdict["MAXRUNTIME"]==0" is an quick fix to test stim
@@ -994,6 +1368,16 @@ def main(path_stimfile):
              # fake key-press to stop experiments through event listener
             event._onPygletKey(key.END,key.MOD_CTRL)
 
+
+    # ##
+    # #Uncomment the following if you would like to save the stimulation as a movie in your PC.
+    # #Not recomended for usual recordings but just for examples of short duration
+    ##Saving movie frames
+    #folder_path = r'your_path'
+    #file_name ='your_file.gif'
+    #saving_path =os.path.join(folder_path,file_name)
+    #win.saveMovieFrames(saving_path)
+
 ##############################################################################
     # Save data
     outFile.close()
@@ -1006,39 +1390,16 @@ def main(path_stimfile):
     if counterTaskHandle:
         clearTask(pulseTaskHandle)
 
-    
+    # Stop
+    print ("Write out ... close ...")
+    try:
+        if eval(stimdict['print'])==True:
+            win.saveMovieFrames(os.path.split(path_stimfile)[0] + "\\pics\\frame.png")
+    except:
+        pass    
+    win.close()
+    core.quit()
 
-    #Saving movie frames
-    if exp_Info['saving_movie_frames']: #Not recomended for usual recordings but just for examples of short duration
-        #Saving movie frames
-        print('Saving movie frames...')
-        folder_path = config.OUT_DIR
-        file_name =f'stimulus.gif'
-        saving_path =os.path.join(folder_path,file_name)
-        try:
-            win.saveMovieFrames(saving_path)
-        except:
-            print('>>> win.saveMovieFrames failed to generate the .gif file \n check the epoch specifig movie folder')
-                    # Set the input folder containing .png files
-        input_folder = os.path.join(config.OUT_DIR,'Last_stim_movie_frames')
-        for folder_path, _, _ in os.walk(input_folder):
-            # Set the saving path for the movie file (e.g., .mp4)
-            saving_path = os.path.join(folder_path, 'stimulus.mp4')
-            # Set the frames per second (fps) for the movie
-            fps = config.FRAMERATE
-            # Create the movie from .png files
-            create_movie_from_png(folder_path, saving_path, fps)
-
-        win.close()
-        core.quit()
-    
-    else:
-
-        # Stop
-        print ("Write out ... closed!")
-
-        win.close()
-        core.quit()
 
 
 def clearTask(taskHandle):
