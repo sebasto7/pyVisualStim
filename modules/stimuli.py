@@ -543,6 +543,7 @@ def stim_noise(exp_Info,bg_ls,stim_texture,stimdict, epoch, window, global_clock
 
             # noise.tex = t
             noise.tex = rgb_t
+            noise.size= (maxhorang, maxhorang) # Redundant line for fixing bug of psychopy installation in Investigator Stim PC
             noise.draw()
 
             out.tcurr = global_clock.getTime()

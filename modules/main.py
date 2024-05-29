@@ -382,7 +382,7 @@ def main(path_stimfile):
                 stim_texture_ls = list()
                 noise_array_ls = list()
                 choiseArr = [0,0.5,1]
-                z= 10000 # z- dimension (here frames presented over time)
+                z= int(stimdict["texture.count"][1]) # 10000 # z- dimension (here frames presented over time)
                 if int(stimdict["texture.hor_size"][1]) == 1:
                     x= 1 # x-dimension
                     y = int(stimdict["texture.vert_size"][1]) # y-dimension
@@ -1373,6 +1373,10 @@ def main(path_stimfile):
             circle = visual.Circle(win, units=_units, edges = 128)
             stim_object = circle
 
+        elif stimtype[-1] == "NC":
+            circle = visual.Circle(win, units=_units, edges = 128)
+            stim_object = circle
+
         elif stimtype ==  "SSR":
             bar = visual.Rect(win, lineWidth=0, units=_units)
             stim_object = bar
@@ -1579,6 +1583,11 @@ def main(path_stimfile):
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)
 
             elif stimdict["stimtype"][epoch][-1]== "C":
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                                                                out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
+
+            elif stimdict["stimtype"][epoch][-1]== "NC":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.field_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
