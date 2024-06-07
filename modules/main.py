@@ -1342,6 +1342,16 @@ def main(path_stimfile):
                 z= 10000 # z- dimension (here frames presented over time)
                 curr_arr = np.zeros(size=(z,x,y))
 
+            elif stimdict["STIMULUSDATA"] == "Gaussian":  # Pradeep
+                stim_texture_ls = list()
+                noise_array_ls = list()
+                for e in range(stimdict["EPOCHS"]):
+                    stim_texture_ls.append(None)
+                    noise_array_ls.append(None)
+                _useTex = False
+                _useNoise = False
+                lum_gaussian = guassian_distributed_lums(seed = 50, lum_vector_size= 2500) 
+
 
 
             else: # Specific case for older files (used in 2pstim-C- in which ["STIMULUSDATA"] was not specified
@@ -1370,6 +1380,10 @@ def main(path_stimfile):
             _units = 'degFlatPos'
 
         if stimtype[-1] == "C":
+            circle = visual.Circle(win, units=_units, edges = 128)
+            stim_object = circle
+        
+        elif stimtype == "GaussCircle":      # Pradeep
             circle = visual.Circle(win, units=_units, edges = 128)
             stim_object = circle
 
@@ -1446,7 +1460,13 @@ def main(path_stimfile):
 
         # Setting stimulus backgroung (bg) and foreground (fg) colors
         try:
-            if stimdict["lum"][e] == 111:
+            if stimdict["lum_vector"]:                    #Pradeep
+                bg = set_intensity(e,lum_gaussian[e])
+                fg = set_intensity(e,lum_gaussian[e])
+                bg_ls.append(bg)
+                fg_ls.append(fg)
+
+            elif stimdict["lum"][e] == 111:
                 # Gamma correction and 6-bit depth transformation
                 bg = set_intensity(e,stimdict["bg"][e])
                 fg = set_intensity(e,stimdict["fg"][e])
@@ -1576,8 +1596,14 @@ def main(path_stimfile):
         print(f'STIM SELECTION STARTS: {global_clock.getTime()}')
         try:
 
+
             # Functions that draw the different stimuli
-            if stimdict["stimtype"][epoch] == "SSR":
+            if stimdict["stimtype"][0]== "GaussCircle":    #Pradeep: Please keep this at top because there is only one epoch in my stimuli file as it runs for 1000s of luminace values and it does not make sense to write the parameters for each epoch
+
+                (out, lastDataFrame, lastDataFrameStartTime) = stimuli.gaussian_flash(exp_Info,bg_ls,fg_ls,stim_texture_ls[epoch],noise_array_ls[epoch],stimdict,epoch, win, global_clock,duration_clock,outFile,
+                                                                out,stim_object_ls[0],dlp.OK, viewpos, data, counterTaskHandle, lastDataFrame, lastDataFrameStartTime)
+
+            elif stimdict["stimtype"][epoch] == "SSR":
 
                 (out, lastDataFrame, lastDataFrameStartTime) = stimuli.standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict,epoch, win, global_clock,duration_clock,outFile,
                                                                 out,stim_object_ls[epoch],dlp.OK,counterTaskHandle,data, lastDataFrame, lastDataFrameStartTime)

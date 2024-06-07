@@ -223,6 +223,190 @@ def field_flash(exp_Info,bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, win
     return (out, lastDataFrame, lastDataFrameStartTime)
 
 
+def gaussian_flash(exp_Info,bg_ls,fg_ls,stim_texture,noise_arr,stimdict, epoch, window, global_clock, duration_clock,   #Pradeep
+                outFile,out, stim_obj,dlpOK, viewpos, data,taskHandle = None,
+                lastDataFrame = 0, lastDataFrameStartTime = 0):
+
+    """gaussian_flash:
+
+    This stimulus function draws a stim_obj (circle or a rectangle) of a given size.
+    Usually, the the stimulus covers the whole screen, eliciting a full-field flash. 
+    The fucntion takes in a vector with "gaussian distrubuted" stimuli.
+
+
+    bg_ls: defines the level of luminance of the screen per epoch
+    fg_ls:  defines the level of luminance of the stim_obj per epoch
+    pos: defines the posisitonb of the stim_obj. [0,0] is the center of the screen
+    tau: duration in seconds for fg presentation
+    duration: entire duration in seconds (bg + fg)
+    framerate: is the refresh rate of the monitor
+
+    """
+
+    print(bg_ls[epoch])
+    print(fg_ls[epoch])
+    win = window
+    win.colorSpace = 'rgb' # R G B values in range: [-1, 1]
+    #win.color= bg_ls[epoch] # Background for selected epoch
+
+    # circle attributes
+    if stimdict["stimtype"][0] ==  "GaussCircle":
+        stim_obj.radius= stimdict["radius"][0]
+
+    # rectangle attributes
+    elif stimdict["stimtype"][epoch] == "R":
+        stim_obj.width = stimdict["width"][epoch]
+        stim_obj.height = stimdict["height"][epoch]
+        
+
+    # set timing
+    tau = stimdict["tau"][0]
+    duration = stimdict["duration"][0]
+    framerate = config.FRAMERATE
+    frame_shift = 0 # For stim_obj texture
+    start_frame = 0 # For stim_obj texture
+
+    # "number"  and "interSpace" attributes are present in only some stimuli
+    stim_obj_ls, space_ls = [], [] # Only implemented for vertical and horizontal bars (see bar.ori)
+    try:
+        stim_number = int(stimdict["number"][epoch])
+        inter_space = stimdict["interSpace"][epoch]
+        for i in range(stim_number):
+            if stim_number == 1:
+                space_ls.append(0.0)
+            else:
+
+                space_ls.append(inter_space * i)
+                #stim_obj.pos[0] = stim_obj.pos[0]-space_ls[i] # For sister objects
+            stim_obj_ls.append(stim_obj)
+    except:
+        stim_number = 1
+        stim_obj_ls.append(stim_obj)
+        space_ls.append(0.0)
+
+
+    # generating texture for luminance values
+    if stimdict["stimtype"][0] == 'NC':
+
+        wave_lenght = len(stim_texture[0]) # Lenght of the original wave
+        noise_arr = noise_arr[1,:,:] # Making lenghts of signal and noise the same
+
+        long_wave = stim_texture[0] # Initialyzing the array with 1 signal wave
+        for wave in stim_texture:
+            long_wave = np.append(long_wave,wave)
+        stim_texture = long_wave
+
+        long_noise_arr = noise_arr[0] # Initialyzing the array with 1 noise wave
+        for noise_wave in noise_arr:
+            long_noise_arr = np.append(long_noise_arr,noise_wave)
+        noise_arr = long_noise_arr
+
+        circle_texture = stim_texture + noise_arr # Final texture (=lum values) to apply
+        frequency =  stimdict["frequency"][epoch] # Frequency to change lum values
+        framerate = config.FRAMERATE # Screen frame rate
+        frame_shift = round((wave_lenght * frequency)/framerate)
+
+
+    # Information to print
+    BG=  ((bg_ls[epoch][2]+1)/2)/(63.0/255.0) # Scaling values back to a range of [0 1]
+    FG= ((fg_ls[epoch][2]+1)/2)/(63.0/255.0)  # Scaling values back to a range of [0 1]
+    print(f'BG level: {BG}')
+    if BG == 0.0:
+        pass
+    else:
+        # The WC calculation only makes sense if the win values is being showed
+        if stimdict["tau"][0] == stimdict["duration"][0]:
+            pass
+        else:
+            WC = (FG-BG)/BG
+            print(f'FG level: {FG}')
+            print(f'WC: {WC}')
+
+
+    # As long as duration, draw the stimulus
+    # Reset epoch timer
+    duration_clock = global_clock.getTime()
+    reset_bar_position = False
+
+    for frameN in range(int(duration*framerate)):
+        # fast break on key (ESC) pressed
+        if len(event.getKeys(['escape'])):
+            raise StopExperiment
+        
+        #Resetting sisters stim_obj possition for next frame
+        if reset_bar_position: # event avoided for first iteration (frame)
+            stim_obj.pos[0] = stim_obj.pos[0] + sum(space_ls)
+
+        # As long as tau, draw FOREGROUND (> sign direction)
+        if global_clock.getTime()-duration_clock >= tau:
+            try:
+                if stimdict['regist_subepoch'][epoch] == 1:
+                    tau_signal=0
+            except:
+                pass
+            # For each bar object specified by the user (see "bar.number")
+            for i,stim_obj in enumerate(stim_obj_ls):
+                try:
+                    stim_obj.pos = (stimdict['x_center'][0],stimdict['y_center'][0])
+                except:
+                    stim_obj.pos = (0,0)
+                # stim_obj attributes for drawing fg
+                if stimdict["stimtype"][0] == 'NC':
+                    stim_obj.fillColor = [-1, -1,circle_texture[start_frame]] # in RGB
+                    stim_obj.lineColor= [-1, -1,circle_texture[start_frame]] # in RGB
+                    #stim_obj.radius= stimdict["radius"][epoch]
+                else:
+                    stim_obj.pos[0] = stim_obj.pos[0]-space_ls[i] # For sister objects
+                    #stim_obj.pos[1] = stim_obj.pos[1]-space_ls[i] # For sister objects
+                    stim_obj.fillColor = fg_ls[epoch]
+                    stim_obj.lineColor= fg_ls[epoch]
+
+                #print(stim_obj.pos[0])
+                stim_obj.draw()
+
+
+
+        elif global_clock.getTime()-duration_clock < tau:
+            # stim_obj attributes for drawing BACKGROUND
+            stim_obj.fillColor = bg_ls[epoch]
+            stim_obj.lineColor= bg_ls[epoch]
+            stim_obj.draw()
+            #print('tau')
+            try:
+                if stimdict['regist_subepoch'][epoch] == 1:
+                    tau_signal=1
+            except:
+                pass
+
+        # store Output
+        out.tcurr = global_clock.getTime()
+        out.yPos = time.time()
+        
+        try:
+            if stimdict['regist_subepoch'][epoch] == 1:
+                out.xPos = tau_signal
+        except:
+            out.xPos = float(stim_obj.pos[0])
+        # NIDAQ check, timing check and writeout
+        # quick and dirty fix to run stimulus on dlp without mic
+        if not stimdict["MAXRUNTIME"] == 0:
+            (out.data,lastDataFrame, lastDataFrameStartTime) = \
+            check_timing_nidaq(dlpOK,stimdict["MAXRUNTIME"],global_clock,
+                               taskHandle,data,lastDataFrame,
+                               lastDataFrameStartTime)
+        write_out(outFile,out)
+
+        out.framenumber = out.framenumber +1
+        win.flip() # swap buffers
+        reset_bar_position = True
+        start_frame = start_frame + frame_shift
+
+        # #SavingMovieFrames
+        # win.getMovieFrame() #Frames are stored in memory until a saveMovieFrames() command is issued.
+
+    return (out, lastDataFrame, lastDataFrameStartTime)
+
+
 def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile, out, bar, dlpOK, taskHandle=None, data=0, lastDataFrame=0, lastDataFrameStartTime=0):
 
     """standing_stripes_random:

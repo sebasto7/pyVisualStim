@@ -919,3 +919,28 @@ def helper_cumsum__wrap(array_towrap,max,min):
                 cum_sum[dim, i] = max + (cum_sum[dim, i] + max)
 
     return cum_sum
+
+
+def guassian_distributed_lums(seed, lum_vector_size):  #Pradeep
+    """ The funtion uses a trucated normal distribution to generate lumimance values used by the
+    gaussian_flash function.
+    Parameters for the truncated normal distribution are as follows:
+        a_trunc = lower limit to cut-off the distribution tails
+        b_trunc =  upper limit to cut-off the distribution tails
+        loc = mean value to center the distribution around
+        scale = the std dev or the spread of the gaussian distributed stimuli
+    Seeds: to set the seed for random num generator
+    lum_vector_size: set the length of gaussian distributed stimuli
+
+    output: a vector of size determined by lum_vector_size"""
+
+    np.random.seed(seed)
+    a_trunc = 0
+    b_trunc = 1
+    loc = 0.6
+    scale = 0.35
+    a, b = (a_trunc - loc) / scale, (b_trunc - loc) / scale
+
+    lum_gaussian = truncnorm.rvs(a, b, loc = loc , scale = scale, size = lum_vector_size)
+
+    return(lum_gaussian)
