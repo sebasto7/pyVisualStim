@@ -1,0 +1,20 @@
+EPOCHS	2		
+MAXRUNTIME	3600	
+STIMULUSDATA	NULL	
+PERSPECTIVE_CORRECTION	1
+RANDOMIZATION_MODE	2	
+
+Stimulus.stimtype		ADS		ADS	
+Stimulus.bg			1		1	
+Stimulus.fg			0		0	
+Stimulus.duration		1		1	
+Stimulus.velocity		20		20	
+Stimulus.direction		1		1	
+Stimulus.bar.width  		80		80	
+Stimulus.bar.height 		480		480	
+Stimulus.bar.orientation 	0		0	
+Stimulus.tau			1		1	
+Stimulus.pers.corr		1		1	
+Stimulus.randomize		2		2	
+Stimulus.angle			0		60	
+	
