@@ -95,13 +95,14 @@ SCREEN_WIDTH = 9 # Width of the window's projection area, For dlp 90deg: 12, For
 VIEWPOS_FILE = 'viewpositions.txt' # Contains window' size and position on the screen
 VIEWPOINT_X = 0.5
 VIEWPOINT_Y = 0.5
-WARP = 'spherical'
+WARP = 'spherical' #'spherical', 'cylindrical', 'warpfile'
 WIN_MASK = 0
-MODE = 'patternMode' #'patternMode', 'videoMode'
+MODE = 'patternMode' #'patternMode', 'videoMode', 'video_to_patternMode'
+WARP_FILE = r'C:\Users\smolina\Documents\GitHub\pyVisualStim\warp_files\spherical_warpfile.txt ' # spherical_warpfile.txt, xyuv.txt (spherical mirror from paulbourke.net
 
 # Other configurations
 MAXRUNTIME = 3600
-SEED = 54378  # To keep reproducibility among experiments >> DO NOT CHANGE this SEED number: (54378, original from 2020)
+SEED = 54378 # To keep reproducibility among experiments >> DO NOT CHANGE this SEED number: (54378, original from year 2020)
 
 # For NIDAQ configuration
 COUNTER_CHANNEL = "Dev2/ctr1" # or "Dev2/ctr1"

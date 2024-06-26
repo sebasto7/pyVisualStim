@@ -6,6 +6,7 @@
 import psychopy
 from psychopy import visual,core,logging,event, gui, monitors
 from psychopy.visual.windowwarp import Warper # perspective correction
+from psychopy.visual.windowwarp_custom import Warper_custom # perspective correction class modified by Seb and JF
 from matplotlib import pyplot as plt # For some checks
 import PyDAQmx as daq
 # The PyDAQmx module is a full interface to the NIDAQmx ANSI C driver.
@@ -20,7 +21,6 @@ import time
 import sys
 import copy
 import os
-
 from modules.helper import *
 from modules.exceptions import *
 from modules import config
@@ -88,13 +88,7 @@ def main(path_stimfile):
     exp_Info['Screen_distance'], exp_Info['Screen_width'] = config.DISTANCE, config.SCREEN_WIDTH
     exp_Info['WinMasks'] = config.WIN_MASK
 
- ##############################################################################
- #######################Settings for DLP Pattern Mode##########################
- ##############################################################################
-    if exp_Info['Projector_mode'] == 'patternMode':
-        _viewScale = [1,1/2]
-    else:
-        _viewScale = [1,1]
+
  ##############################################################################
 
     # Create output file
@@ -111,7 +105,7 @@ def main(path_stimfile):
     # Read stimulus file
     stimulus = Stimulus(fname)
     stimdict = stimulus.dict
-    #stimdict["PERSPECTIVE_CORRECTION"] = 1 #Temporary until changing all stimuli
+
 
     #Adjusting old stim names to new ones
     for s, stimtype in enumerate(stimdict["stimtype"]):
@@ -158,36 +152,34 @@ def main(path_stimfile):
     # before drawing that to the 'back buffer'and that process allows us to do
     # some fancy transforms on the whole window when we then flip()
 
+    # Adjusting aspect ratio of the dlp if required.
+    _viewScale = [1,1] # [1,1/2] for retangle to square transformation. Old approach to fix dlp 1x2 aspect ratio.
+
     #Initializing the window as a dark screen (color=[-1,-1,-1])
     if dlp.OK: #Using the projector
         # Initializing screen
+        # Note: when working with 3 screens, check the correct number for the dlp for the "screen" parameter
         mon = monitors.Monitor('dlp', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(fullscr = False, monitor=mon,
                         size = [_width,_height], viewScale = _viewScale,
                         pos = [_xpos,_ypos], screen = 1,
-                        color=[-1,-1,-1],useFBO = True,allowGUI=False,
+                        color=[-1,-1,-1],useFBO
+                         = True,allowGUI=False,
                         viewOri = 0.0)
-
-        if exp_Info['WinMasks']: # Creating more than one screen to mask the main one
-            win_mask_ls = window_3masks(win, _monitor=mon)
-
-        # viewScale = [1,1/2] because dlp in patternMode has rectangular pixels
         # viewOri to compensate for the tilt of the projector.
         # If screen is already being tilted by Windows settings, set to 0.0 (deg)
 
     else: #In test mode on the PC screen
-        _width,_height = 325, 325 # window size = 9cm in  my ASUS VG248 monitor
-        _width,_height = 1920, 1080 # Full size in my ASUS VG248 monitor
-        _width,_height = 1000, 1000 # window size = 18cm in  my Lenovo laptop
-        _width,_height = 500, 500 # window size = 9cm in  my Lenovo laptop
-        _width,_height = 512, 512 # window size = 9cm in  my Lenovo laptop + resizing the images for saving movie frames with imageio
+        _width,_height = 512, 512 # window size = 9cm in the screen. Check in your specific screen and adjust pixel size
 
         mon = monitors.Monitor('testMonitor', width=config.SCREEN_WIDTH, distance=config.DISTANCE)
         win = visual.Window(monitor=mon,size = [_width,_height], screen = 0,
                     allowGUI=False, color=[-1,-1,-1],useFBO = True, viewOri = 0.0)
 
-        if exp_Info['WinMasks']: # Creating more than one screen to mask the main one
-            win_mask_ls = window_3masks(win,_monitor=mon)
+
+    # If requiered, creating more than one screen to mask the main one
+    if exp_Info['WinMasks']: 
+        win_mask_ls = window_2masks(win,_monitor=mon)
 
     # Gamma calibration
     if config.CALIBRATE_GAMMA:
@@ -215,23 +207,52 @@ def main(path_stimfile):
 ######################### Perspective correction #############################
 ##############################################################################
 
+    
+    stimdict["PERSPECTIVE_CORRECTION"] = 1 # Temporary for debugging
+
+    # For patternMode correct presentation of non-warped stimuli
+    if ((exp_Info['Projector_mode'] == 'patternMode') and (stimdict["PERSPECTIVE_CORRECTION"] == 0)):
+
+        # the aspect ratio will be corrected by viewScale and not by stimulus generation in patternMode option, as if it were in videoMode
+        exp_Info['Projector_mode'] = 'videoMode' 
+        win.viewScale = [1,1/2]
+
+     
+
     # Subjects view perspective
     x_eyepoint = exp_Info['ViewPoint_x']
     y_eyepoint = exp_Info['ViewPoint_y']
 
-    test_clock = core.Clock()
+    #test_clock = core.Clock()
     #print(f'WARPER STARTS: {test_clock.getTime()+10}')
+
     # warp for perspective correction
     if stimdict["PERSPECTIVE_CORRECTION"]== 1:
         print('PERSPECTIVE CORRECTION APPLIED')
-        warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
-                    warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
-                    flipHorizontal = False, flipVertical = False)
-        #warper.dist_cm = config.DISTANCE# debug_chris
-        #warper.changeProjection(warp='spherical', eyepoint=(exp_Info['ViewPoint_x'], exp_Info['ViewPoint_y']))# debug_chris
-        #print(f'Warper eyepoints: {warper.eyepoint}')
+
+        if exp_Info['Warp'] == 'warpfile':
+            warpfile = config.WARP_FILE
+            warper = Warper(win, warp=exp_Info['Warp'], warpfile=warpfile,
+                        warpGridsize=300, eyepoint=[x_eyepoint,y_eyepoint],
+                        flipHorizontal=False, flipVertical=False)
+
+            print(f'Warp file for correction:\n {config.WARP_FILE}')
+
+            
+        else:
+            if exp_Info['Projector_mode'] == 'videoMode':
+                warper = Warper(win, warp=exp_Info['Warp'],warpfile = "",
+                        warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
+                        flipHorizontal = False, flipVertical = False) 
+
+            elif exp_Info['Projector_mode'] == 'patternMode':
+                warper = Warper_custom(win, warp=exp_Info['Warp'],warpfile = "",
+                        warpGridsize= 300, eyepoint = [x_eyepoint,y_eyepoint],
+                        flipHorizontal = False, flipVertical = False)  
+
     else:
         warper = Warper(win, warp= None, eyepoint = [x_eyepoint,y_eyepoint])
+        
     #print(f'WARPER ENDS: {test_clock.getTime()+10}')
 
 ##############################################################################
@@ -246,8 +267,8 @@ def main(path_stimfile):
 
 ##############################################################################
 
-    # store frame rate of monitor if we can measure it
-    exp_Info['actual_frameRate'] = win.getActualFrameRate()
+    # Store frame rate of monitor if we can measure it
+    exp_Info['actual_frameRate'] = win.getActualFrameRate() 
     if exp_Info['Frame_rate'] != None:
         frameDur = 1.0 / round(exp_Info['Frame_rate'])
     else:
@@ -261,7 +282,7 @@ def main(path_stimfile):
     # Write main setup to file (metadata)
     write_main_setup(config.OUT_DIR,dlp.OK,config.MAXRUNTIME,exp_Info)
 
-    # shuffle epochs newly, if start or every epoch has been displayed
+    # Shuffle stimulus epochs newly, if starts or every epoch has been displayed
     if current_index == 0:
         try:
             print(f'RANDOMIZATION_MODE: {stimdict["RANDOMIZATION_MODE"]}')
@@ -358,18 +379,15 @@ def main(path_stimfile):
                         noise_array_ls.append(noise_arr)
 
                         # Plotting what it will be presented
-                        max_value = (2*(63.0/255.0))-1 # Max value in stim_texture after scaling
-                        min_value = -1 # Min value in stim_texture after scaling
-                        noisy_sinosoidal_wave = signal + noise_arr [1,1,:]
-                        noisy_sinosoidal_wave[np.where(noisy_sinosoidal_wave> max_value)] = max_value
-                        noisy_sinosoidal_wave[np.where(noisy_sinosoidal_wave<min_value)] = min_value
+                        # max_value = (2*(63.0/255.0))-1 # Max value in stim_texture after scaling
+                        # min_value = -1 # Min value in stim_texture after scaling
+                        # noisy_sinosoidal_wave = signal + noise_arr [1,1,:]
+                        # noisy_sinosoidal_wave[np.where(noisy_sinosoidal_wave> max_value)] = max_value
+                        # noisy_sinosoidal_wave[np.where(noisy_sinosoidal_wave<min_value)] = min_value
                         # plt.plot(noisy_sinosoidal_wave)
                         # plt.show()
 
                         # Calculating std for noise based on SNR definition in dB
-
-                        # target_snr_db = 10* (np.log10(mean_signal/np.sqrt(noise_std)))
-                        # target_snr_db = 10* (np.log10(signal_std/noise_std))
                         target_snr_db = 20* np.log10(signal_rms/noise_rms) # Wikipedia decibels definition
                         # print(f'SNR_dB {i}: {target_snr_db}')
 
@@ -390,17 +408,40 @@ def main(path_stimfile):
                     stim_texture= np.random.choice(choiseArr, size=(z,x,y))
                     stim_texture = np.repeat(stim_texture,int(stimdict["texture.vert_size"][1]),axis=1)
                 elif int(stimdict["texture.vert_size"][1]) == 1:
-                    x= int(stimdict["texture.hor_size"][1])
-                    y = 1
-                    np.random.seed(config.SEED)
-                    stim_texture= np.random.choice(choiseArr, size=(z,x,y))
-                    stim_texture = np.repeat(stim_texture,int(stimdict["texture.hor_size"][1]),axis=2)
-                else:
-                    x=int(stimdict["texture.hor_size"][1])
-                    y=int(stimdict["texture.vert_size"][1])
-                    np.random.seed(config.SEED)
-                    stim_texture= np.random.choice(choiseArr, size=(z,x,y))
 
+                    if exp_Info['Projector_mode'] == 'patternMode':
+                        x= int(stimdict["texture.hor_size"][1])*2
+                        y = 1
+                        np.random.seed(config.SEED)
+                        stim_texture= np.random.choice(choiseArr, size=(z,x,y))
+                        stim_texture = np.repeat(stim_texture,int(stimdict["texture.hor_size"][1]),axis=2)
+
+                    else:
+                        x= int(stimdict["texture.hor_size"][1])
+                        y = 1
+                        np.random.seed(config.SEED)
+                        stim_texture= np.random.choice(choiseArr, size=(z,x,y))
+                        stim_texture = np.repeat(stim_texture,int(stimdict["texture.hor_size"][1]),axis=2)
+                else:
+
+                    if exp_Info['Projector_mode'] == 'patternMode':
+
+                        # the projection is rectangular because of the projector pixel size. that means we have to provide opposite rectangles as input
+                        # for example (the screen is twice the size in x than in y (800 and 400)) so if we want squares on the screen 
+                        # we have to provide twice the amount of rectangles in x
+                        x=int(stimdict["texture.hor_size"][1])*2 # this is the dimension that gets twice the amount of rectangles
+                        y=int(stimdict["texture.vert_size"][1]) # this dimension will just get a np.repeat to keep the same number of squares in twice the space
+                        np.random.seed(config.SEED)
+                        stim_texture= np.random.choice(choiseArr, size=(z,x,y))
+                        stim_texture = np.repeat(stim_texture,2,axis=2) #Here we are adding those repeats mentioned in the previous comment line.
+
+                    else:
+                        x=int(stimdict["texture.hor_size"][1]) # this is the dimension that gets twice the amount of rectangles
+                        y=int(stimdict["texture.vert_size"][1]) 
+                        np.random.seed(config.SEED)
+                        stim_texture= np.random.choice(choiseArr, size=(z,x,y))
+
+                
                 stim_texture_ls.append(stim_texture)
                 noise_array_ls.append(None)
 
@@ -429,10 +470,10 @@ def main(path_stimfile):
                 
 
 
-                # set stimuli dimensions
-                
-                box_size_x = stimdict["Box_sizeX"] # first guess: this number should be around 20 
-                box_size_y = stimdict["Box_sizeY"]
+                # Set stimuli dimensions
+                box_size_x = stimdict["Box_sizeX"] *2 # this implements the pixel distortion correction. see ternary noise comments
+                                                      # for a detailed description of the problem
+                box_size_y = stimdict["Box_sizeY"] 
 
                 frames=number_of_frames
                 
@@ -487,6 +528,9 @@ def main(path_stimfile):
                     upscale_factor_x = box_size_x/stimdict["Shift_resolution"]
                     upscale_factor_y = box_size_y/stimdict["Shift_resolution"]
                     noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
+                    #######################
+                    ##### for the other dimension an additional factor of 2 is needed to compensate for the streched pixels in the projection 
+                    ########################
                     noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
 
 
@@ -574,7 +618,7 @@ def main(path_stimfile):
 
                 # set stimuli dimensions
                 
-                box_size_x = stimdict["Box_sizeX"] # before it was 5
+                box_size_x = stimdict["Box_sizeX"]/2 # before it was 5
                 box_size_y = stimdict["Box_sizeY"] # before it was 5
 
                 frames=number_of_frames
@@ -689,7 +733,7 @@ def main(path_stimfile):
                 #upscale the stim array to be able to shift it in small steps
 
                 noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
-                noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+                noise_texture = np.repeat(noise_texture,upscale_factor_y*2,axis=2)
 
                 # scale the moves accordingly. diagonal movements require a different scaling
                 for i in range(moves.shape[1]):
@@ -779,7 +823,7 @@ def main(path_stimfile):
 
                 #step = int(float(stimdict['frame_duration'])*float(stimdict['speed']))
 
-                step = update_rate*20 # maybe this should be hardcoded  ---- time resolution(s)* minimal speed (this should allow for 0.5deg minimal movement
+                step = update_rate*stimdict["speed"] # maybe this should be hardcoded  ---- time resolution(s)* minimal speed (this should allow for 0.5deg minimal movement
                                # but will increase in turn the size of the array passed. that could be risky)
                                # minimal speed is hardcoded at 10deg/s
                 minimum_step = step*np.cos(np.deg2rad(45))
@@ -791,7 +835,7 @@ def main(path_stimfile):
 
                 # set stimuli dimensions
 
-                box_size_x = stimdict["Box_sizeX"] 
+                box_size_x = stimdict["Box_sizeX"]/2
                 box_size_y = stimdict["Box_sizeY"] 
 
                 frames=number_of_frames
@@ -980,7 +1024,7 @@ def main(path_stimfile):
                 #upscale the stim array to be able to shift it in small steps
 
                 noise_texture = np.repeat(noise_texture,upscale_factor_x,axis=1) # this brings the size of the matrix to the 80*80 size, then the shifts will be in the right scale
-                noise_texture = np.repeat(noise_texture,upscale_factor_y,axis=2)
+                noise_texture = np.repeat(noise_texture,upscale_factor_y*2,axis=2)
 
                 # scale the moves accordingly. diagonal movements require a different scaling
                 for i in range(moves.shape[1]):
@@ -1089,8 +1133,8 @@ def main(path_stimfile):
 
                 # set stimuli dimensions
 
-                box_size_x = stimdict["Box_sizeX"] 
-                box_size_y = stimdict["Box_sizeY"] 
+                box_size_x = stimdict["Box_sizeX"]
+                box_size_y = stimdict["Box_sizeY"]*2
 
                 frames=number_of_frames
 
@@ -1569,10 +1613,11 @@ def main(path_stimfile):
     # that happens sometimes when the microscope starts scanning
     print('Microscope scanning started')
     print('5s pause...')
+    win.flip()
     time.sleep(5)
     print('Stimulus started')
     print('##############################################')
-
+    
     # Main Loop: dit diplays the stimulus unless:
         # keyboard key is pressed (manual stop)
         # stop condition becomse "True"
@@ -1685,13 +1730,7 @@ def main(path_stimfile):
             raise
         except daq.DAQError as err:
             print ("DAQmx Error: %s"%err)
-        # Irregular stop conditions:
-        except MicroscopeException or StimulusTimeExceededException or GlobalTimeExceededException as e:
-            pass
-            print ("A stop condition became true: " )
-            print ("Time of %s was exceeded by current time %s at microscope frame %s. Maybe better use testmode (no DLP)?" %(e.spec_time,e.time,e.frame))
-            print (e)
-            stop = True
+
         # Manual stop from stimulus:
         except StopExperiment:
             print('##############################################')

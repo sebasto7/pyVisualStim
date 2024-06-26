@@ -443,9 +443,12 @@ def standing_stripes_random(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global
     #Single bar, random locations
     print(f'Getting random positions')
     if stimdict["bar.orientation"][epoch] == 0:
-        positions = position_x(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+        positions = position_x(exp_Info, stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
     elif stimdict["bar.orientation"][epoch] == 90:
-        positions = position_y(stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+        positions = position_y(exp_Info, stimdict, epoch, screen_width=scr_width, distance=scr_distance, seed=position_seed)
+
+        if exp_Info['Projector_mode'] == 'patternMode':
+            bar.width = bar.width * 0.5
 
     bar_no = len(positions)
     epoch_duration = (bg_duration + bar_duration) * bar_no
@@ -530,11 +533,20 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
     bar.width = stimdict["bar.width"][epoch]
     bar.height = stimdict["bar.height"][epoch]
     bar.ori = stimdict["bar.orientation"][epoch]
+
+    #Correting width for diagonals
+    if stimdict["bar.orientation"][epoch] == 45:
+        bar.width = stimdict["bar.width"][epoch] * np.sqrt(2)
+    elif stimdict["bar.orientation"][epoch] == 135:
+        bar.width = stimdict["bar.width"][epoch] * np.sqrt(2)
+
+
     # set timing
     tau = stimdict["tau"][epoch]
     duration = stimdict["duration"][epoch]
     direction = stimdict["direction"][epoch]
     framerate = config.FRAMERATE
+    velocity = stimdict["velocity"][epoch]
 
     # Size of your actual window (in degrees of visual angle)
     scr_width = win.scrWidthCM
@@ -543,6 +555,22 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
     # Setting edge positions
     direction = set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,direction)
     print(f'Direction: {direction}')
+
+   # Adding lines for correctinos due to  1x2 pixel size in pattern mode
+    if exp_Info['Projector_mode'] == 'patternMode': 
+        if stimdict["bar.orientation"][epoch] == 90:
+            bar.width = bar.width*0.5
+            velocity = stimdict["velocity"][epoch] *0.5
+        elif stimdict["bar.orientation"][epoch] == 45:
+            bar.width = bar.width*0.5
+            bar.ori = 63.43 # Calculations by JF
+        elif stimdict["bar.orientation"][epoch] == 135:
+            bar.width = bar.width*0.5
+            bar.ori = 116.57 # Calculations by JF 
+            velocity = stimdict["velocity"][epoch] *0.5
+
+
+
 
     # "bar.initPos" attribute are present in only some stimuli
     try:
@@ -582,55 +610,60 @@ def drifting_stripe(exp_Info,bg_ls,fg_ls,stimdict, epoch, window, global_clock, 
         #Resetting sisters bar possition for next frame
         if reset_bar_position: # event avoided for first iteration (frame)
             sum_corretion = sum(space_ls)
-            if bar.ori == 0:
+            if stimdict["bar.orientation"][epoch] == 0:
                 if direction == "right":
                     bar.pos[0] = bar.pos[0] + sum_corretion 
                 elif direction == "left":
                     bar.pos[0] = bar.pos[0] - sum_corretion 
-            elif bar.ori == 90 :
+            elif stimdict["bar.orientation"][epoch] == 90 :
                 if direction == "up":
                     bar.pos[1] = bar.pos[1] +  sum_corretion 
                 elif direction == "down":
                     bar.pos[1] = bar.pos[1] -  sum_corretion 
+
+            elif stimdict["bar.orientation"][epoch] == 45 :
+                if direction == "left-up":
+                    bar.pos[1] = bar.pos[1] +  sum_corretion 
+                elif direction == "rigth-down":
+                    bar.pos[1] = bar.pos[1] -  sum_corretion
 
         # As long as tau, draw FOREGROUND (> sign direction)
         if global_clock.getTime()-duration_clock >= tau:
 
             # For each bar object specified by the user (see "bar.number")
             for i,bar in enumerate(bar_ls):
-                if bar.ori == 0 :
+                if stimdict["bar.orientation"][epoch] == 0 :
                     bar.pos = (bar.pos[0], init_pos) # Fixing Y position to a desire initial position
                     # Move Stimulus with velocity per second
                     if direction == "right": # For bars moving to the right along the x-axis
                         bar.pos[0] = bar.pos[0]-space_ls[i] # For sister bars
-                        bar.pos += ((stimdict["velocity"][epoch]/framerate)/bar_number,0.0)
+                        bar.pos += ((velocity/framerate)/bar_number,0.0)
                     elif direction == "left": # For bars moving to the left along the x-axis
                         bar.pos[0] = bar.pos[0]+space_ls[i] # For sister bars
-                        bar.pos -= ((stimdict["velocity"][epoch]/framerate)/bar_number,0.0)
-                elif bar.ori == 90 :
+                        bar.pos -= ((velocity/framerate)/bar_number,0.0)
+                elif stimdict["bar.orientation"][epoch] == 90 :
                     bar.pos = (init_pos,bar.pos[1]) # Fixing X position to a desire initial position
                     # Move Stimulus with velocity per second
                     if direction == "up": # For bars moving to the right along the x-axis
                         bar.pos[1] = bar.pos[1]-space_ls[i] # For sister bars
-                        bar.pos += (0.0,(stimdict["velocity"][epoch]/framerate)/bar_number)
+                        bar.pos += (0.0,(velocity/framerate)/bar_number)
                     elif direction == "down": # For bars moving to the left along the x-axis
                         bar.pos[1] = bar.pos[1]+space_ls[i] # For sister bars
-                        bar.pos -= (0.0,(stimdict["velocity"][epoch]/framerate)/bar_number)
-                elif bar.ori ==  45:
+                        bar.pos -= (0.0,(velocity/framerate)/bar_number)
+                elif stimdict["bar.orientation"][epoch] ==  45:
                     # Move Stimulus with velocity per second
-                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
                     if direction == "left-up": # For bars moving to the right along the x-axis
-                        bar.pos -= ((stimdict["velocity"][epoch]/framerate)/bar_number*np.sqrt(2),0.0)
+                        bar.pos -= ((velocity/framerate)/bar_number*np.sqrt(2),0.0)
                     elif direction == "right-down": # For bars moving to the left along the x-axis
-                        bar.pos += ((stimdict["velocity"][epoch]/framerate)/bar_number*np.sqrt(2),0.0)
-                elif bar.ori == 135:
+                        bar.pos += ((velocity/framerate)/bar_number*np.sqrt(2),0.0)
+                elif stimdict["bar.orientation"][epoch] == 135:
                     # Move Stimulus with velocity per second
-                    bar.width = stimdict["bar.width"][epoch] * np.sqrt(2) # Correcting size for diagonals
                     if direction == "right-up": # For bars moving to the right along the x-axis
-                        bar.pos += (0.0,(stimdict["velocity"][epoch]/framerate)/bar_number*np.sqrt(2))
+                        bar.pos += (0.0,(velocity/framerate)/bar_number*np.sqrt(2))
                     elif direction == "left-down": # For bars moving to the left along the x-axis
-                        bar.pos -= (0.0,(stimdict["velocity"][epoch]/framerate)/bar_number*np.sqrt(2))
+                        bar.pos -= (0.0,(velocity/framerate)/bar_number*np.sqrt(2))
                 #print(bar.pos)
+                print(bar.width)
                 bar.draw()
         # store Output
         out.tcurr = global_clock.getTime()
@@ -873,8 +906,8 @@ def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_ar
     win = window
     win.color= bg_ls[epoch]  # Background for selected epoch
     win.colorSpace = 'rgb'
-    # win.flip() # draw background
-    # win.flip() # present background
+    #win.flip() # draw background
+    win.flip() # present background
 
 
     # set timing
@@ -884,6 +917,10 @@ def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_ar
 
     if stimdict['duration'][epoch]==-1: #in case we want this to behave as edges
         duration =  int((stimdict['sWavelength'][epoch]/stimdict["velocity"][epoch])* framerate)
+        try:
+            print('angle %s stim_duration %s'%(stimdict['angle'][epoch],duration*0.016666666666666666))
+        except:
+            pass
     else:
         duration = int(stimdict['duration'][epoch] * framerate) # Duration in frame number
 
@@ -916,7 +953,7 @@ def noisy_grating(exp_Info,_useNoise,_useTex,viewpos,bg_ls,stim_texture,noise_ar
             grating.size= (np.sqrt(2*(maxhorang**2)), np.sqrt(2*(maxhorang**2)))
 
     except:
-        print('Stim without specified direction and orientation. Default: 0 deg and left')
+        #print('Stim without specified direction and orientation. Default: 0 deg and left')
         grating.ori = 0
         direction = 1
 
@@ -1233,13 +1270,53 @@ print("Module 'stimuli' imported")
 def drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict, epoch, window, global_clock, duration_clock, outFile,out, bar,dlpOK, viewpos, data,taskHandle = None, lastDataFrame = 0, lastDataFrameStartTime = 0):
     """drifting_stripe:
     """
+    xspeed = stimdict['velocity'][epoch]
+    y_speed = xspeed/2
     plt.close('all') #just in case there are any opne figs
     if stimdict["angle"][epoch]==-1:
         available_ori=np.arange(0, 360, 30) 
+
+    # convert the square orientations into rectangular orientations (because of aspect ratio distortion)
+
     else:
-        available_ori=[stimdict["angle"][epoch]]
+        if stimdict["angle"][epoch] == 45:
+            available_ori = [63.43]
+            direction_multiplier = np.array([1,-1])
+        elif stimdict["angle"][epoch] == 135:
+            available_ori = [116.57]
+            direction_multiplier = np.array([1,1])
+        elif stimdict["angle"][epoch] == 225:
+            available_ori = [243.43]
+            direction_multiplier = np.array([-1,1])
+        elif stimdict["angle"][epoch] == 315:
+            available_ori = [296.57]
+            direction_multiplier = np.array([-1,-1])
+        elif stimdict["angle"][epoch] == 90:
+            available_ori=[stimdict["angle"][epoch]]
+            direction_multiplier = np.array([0,-1])
+        elif stimdict["angle"][epoch] == 270:
+            available_ori=[stimdict["angle"][epoch]]
+            direction_multiplier = np.array([0,1])
+        elif stimdict["angle"][epoch] == 0:
+            available_ori=[stimdict["angle"][epoch]]
+            direction_multiplier = np.array([-1,0])
+        elif stimdict["angle"][epoch] == 180:
+            available_ori=[stimdict["angle"][epoch]]
+            direction_multiplier = np.array([1,0])        
+        
+        # elif  stimdict["angle"][epoch] == 90:
+        #     available_ori=[0]
+        # elif  stimdict["angle"][epoch] == 270:
+        #     available_ori=[180]
+        # elif  stimdict["angle"][epoch] == 0:
+        #     available_ori=[90]
+        # elif  stimdict["angle"][epoch] == 180:
+        #     available_ori=[270]
+    
     direction_vector= random.choice(list(available_ori))
-    bar.ori=reflect_angle(direction_vector)
+    copy_ori = direction_vector
+    bar.ori = direction_vector
+    #bar.ori=reflect_angle(direction_vector)
     if stimdict["angle"][epoch]==-1:
         copy_epoch=np.where(np.arange(0, 360, 30)==bar.ori)[0][0] + 1
     else:
@@ -1262,10 +1339,12 @@ def drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict, epoch, window, global_cl
     scr_distance =  win.scrDistCM 
 
     # Setting edge positions and the movement of the edge per frame in x and y
-    step=stimdict["velocity"][epoch]/framerate
-    init_pos= edge_postitioning_and_width(bar,scr_width,scr_distance,direction_vector) # put the bar either in a corner of the screen or at the edge of the screen (for cardinal directions)
-    #init_pos=np.array([0,0])
-    step_multiplicator= find_step_decomposition(direction_vector,step) # define speed of movement in x and y
+    stepHeight = stimdict["velocity"][epoch]/framerate/2
+    stepwidth = stimdict["velocity"][epoch]/framerate
+    #init_pos= edge_postitioning_and_width(bar,scr_width,scr_distance,direction_vector) # put the bar either in a corner of the screen or at the edge of the screen (for cardinal directions)
+    init_pos=np.array([0,0])
+    step_multiplicator= find_step_decomposition(direction_vector,stepHeight,stepwidth) # define speed of movement in x and y
+    step_multiplicator = direction_multiplier * step_multiplicator
     print(f'step: {step_multiplicator}')
     print(f'init_pos: {init_pos}')
     print(f'Direction: {direction_vector}')
@@ -1290,13 +1369,15 @@ def drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict, epoch, window, global_cl
     # Reset epoch timer
     duration_clock = global_clock.getTime()
     counter=0
-    #bar.width = stimdict["bar.width"][epoch]
+    bar.width = calculate_barwidth(copy_ori,screen_virtual_dimension=np.array([80,40]))
+    copy_bar_width = calculate_barwidth(copy_ori,screen_virtual_dimension=np.array([80,40]))
     print(f'bar width: {bar.width}')
     try:
         subepochs= stimdict["subepoch"][epoch]
     except:
         subepochs=1
-    duration = ((bar.width/stimdict["velocity"][epoch]) + tau) # stimdict["duration"][epoch] represents here the number of edges to show
+    
+    duration =  calculate_duration(copy_ori,copy_bar_width,stimdict["velocity"][epoch],tau) # stimdict["duration"][epoch] represents here the number of edges to show #stimdict['duration'][epoch]
     print(f'stim duration: {duration}')
     print(f'fg: {bg_ls[epoch]} bg: {fg_ls[epoch]}') # note. this is valid for ON edges only
     print(f'direction: {direction_vector}')
@@ -1321,8 +1402,9 @@ def drifting_stripe_arbitrary_dir(bg_ls,fg_ls,stimdict, epoch, window, global_cl
                bar.pos= current_step+init_pos
             counter+=1
             # For each bar object specified by the user (see "bar.number")
-            for i,bar in enumerate(bar_ls):                
-                bar.draw()
+            
+            #for i,bar_ in enumerate(bar_ls):                
+            bar.draw()
         else:
             bar.pos=[0,0] # this is temporal an only valid for ON edges
             bar.draw()

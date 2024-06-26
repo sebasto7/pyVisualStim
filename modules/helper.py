@@ -505,7 +505,7 @@ def max_angle_from_edge(screen_width, distance):
     return max_ang
 
 
-def position_x(stimdict, epoch, screen_width, distance, seed):
+def position_x(exp_Info,stimdict, epoch, screen_width, distance, seed):
 
     """ Returns random position values on the x-axis.
 
@@ -539,13 +539,13 @@ def position_x(stimdict, epoch, screen_width, distance, seed):
         xmax = hor_extent
 
 
-    xpos = np.arange(xmin, xmax, bar_distance)
+    xpos = np.arange(xmin, xmax+bar_distance, bar_distance) # xmax+bar_distance: to include the xmax value in the list
     seeder = np.random.RandomState(seed)
     seeder.shuffle(xpos)
 
     return xpos
 
-def position_y(stimdict, epoch, screen_width, distance, seed):
+def position_y(exp_Info,stimdict, epoch, screen_width, distance, seed):
 
     """ Returns random position values on the y-axis.
 
@@ -574,28 +574,84 @@ def position_y(stimdict, epoch, screen_width, distance, seed):
     # ver_extent = abs(ver_angle - (stimdict["bar.width"][epoch]))
     ver_extent = abs(ver_angle)
 
-    if stimdict["pers.corr"][epoch] == 1:
+    # Seb. Correctin for the distorsion in aspect ratio when using patternMode
+    if exp_Info['Projector_mode'] == 'patternMode':
+        ver_extent = ver_extent * 0.5   
+        ymin = ymin * 0.5
+        ymax = ymax * 0.5
+        bar_distance = bar_distance * 0.5
 
-        if ymin < -ver_extent:
-            ymin = -ver_extent
-
-        if ymax > ver_extent:
-            ymax = ver_extent
-
-
-    else:
-        ver_angle = max_angle_from_center(screen_width, distance) # Vertical extent will max how we calculate the horizontal extent
-        ver_extent = abs(ver_angle)
+    if ymin < -ver_extent:
         ymin = -ver_extent
-        ymax= ver_extent
 
-    ypos = np.arange(ymin, ymax, bar_distance)
-    ypos = ypos*-1 #-1 to move downswards with the stimulus
+    if ymax > ver_extent:
+        ymax = ver_extent
+
+
+    # Seb: not sure what he following lines are good for. I comment them out.
+    #if stimdict["pers.corr"][epoch] == 1:
+        # if ymin < -ver_extent:
+        #     ymin = -ver_extent
+
+        # if ymax > ver_extent:
+        #     ymax = ver_extent
+
+    # else:
+    #     ver_angle = max_angle_from_center(screen_width, distance) # Vertical extent will max how we calculate the horizontal extent
+    #     ver_extent = abs(ver_angle)
+    #     ymin = -ver_extent
+    #     ymax= ver_extent
+
+    
+    ypos = np.arange(ymin, ymax+bar_distance, bar_distance) # ymax+bar_distance: to include the ymax value in the list
     seeder = np.random.RandomState(seed)
     seeder.shuffle(ypos)
 
 
     return ypos
+
+def window_2masks(win,_monitor = 'dlp'):
+
+    from psychopy import visual
+
+    '''
+    Draws masks (M) of for a screen, so the initial rectagular shape of the screen becomes a square.
+    It is used only in patternMode when the aspect ratio of the dlp is 1x2 and we want to correct for that
+    projecting first to a rectangle (despite a 800x800 window size is selceted). The center (c) if the screen 
+    is where the view position of the observer is expected.
+
+
+                     
+                        #######################     
+                        #     #         #     #
+                        # M1  #    c    #  M2 #
+                        #     #         #     #
+                        #######################
+
+
+    '''
+
+    ########################## Windows creation ############################
+    win =  win
+    win_mask_sizes =[[win.size[0],win.size[1]/2],[win.size[1],win.size[0]/4],[win.size[1],win.size[0]/4]]
+    win_mask_positions =[[win.pos[0],win.pos[1]],[win.pos[0],win.pos[1]],[win.pos[0],win.pos[1]+(3*win.size[1]/4)]]
+
+
+    win_mask_1 = visual.Window(fullscr = False, monitor='dlp',
+                                size = win_mask_sizes[1], viewScale = [1,1],
+                                screen = 1, pos = win_mask_positions[1],
+                                color=[-1,-1,-1],useFBO = True,allowGUI=False,
+                                viewOri = 0.0)
+  
+    win_mask_2 = visual.Window(fullscr = False, monitor='dlp',
+                                size = win_mask_sizes[2], viewScale = [1,1],
+                                screen = 1, pos = win_mask_positions[2],
+                                color=[-1,-1,-1],useFBO = True,allowGUI=False,
+                                viewOri = 0.0)
+
+    win_mask_ls = [win_mask_1,win_mask_2]
+
+    return win_mask_ls
 
 def window_3masks(win,_monitor = 'testMonitor'):
 
@@ -657,6 +713,19 @@ def set_edge_position_and_direction(bar,scr_width,scr_distance,exp_Info,directio
     #bar.width = maxhorang*2
     maxhorang = maxhorang * direction # x_position should be either 1 or -1
     maxverang = maxverang * direction # x_position should be either 1 or -1
+
+    # Fixing for screen positions when using pattern mode. To compensate for the 1x2 pixel distorsion for orientation different than 0.0. Added by Seb
+    if exp_Info['Projector_mode'] == 'patternMode':
+        if bar.ori == 90:
+            maxhorang = maxhorang * 0.5
+
+        elif bar.ori == 45:
+            maxhorang = maxhorang * 0.5 
+
+        elif bar.ori == 135:
+            maxhorang = maxhorang * 0.5
+            
+
 
     #Adjusting for the rectangle edge to be printed to screen edge
     #It considers the edge of the screen = (maxhorang)
@@ -814,11 +883,62 @@ def edge_postitioning_and_width(bar,scr_width,scr_distance,angle):
     #init_pos = np.array([0 , 0])
     return init_pos#,span
 
-def find_step_decomposition(angle_dir,step):
+def find_step_decomposition(angle_dir,stepH,stepW,scaler=None,desired_speed=0.333):
     """ find the vector decomposition of an unit vector that describes the direction of movement of an edge from its angular direction
-        for example. for angle_dir =45 the movement vector will be (-cos(45),-sin(45))"""
-    angle_rad = np.deg2rad(angle_dir)
-    return np.array([-round(np.cos(angle_rad),4),-round(np.sin(angle_rad),4)])*step # the minus value is due to the fact that the fly has a fipped view of the scene
+        for example. for angle_dir =45 the movement vector will be (-cos(45),-sin(45))
+        does not work for angles not divisible by 45
+        
+        """
+    
+    if angle_dir != 0.0 and angle_dir != 180.0 and angle_dir != 90.0 and angle_dir != 270.0:
+
+        angle_rad = np.deg2rad(angle_dir)
+        step = np.array([stepW,stepH])
+        vH = desired_speed/np.sqrt(5)
+        vW = 2*vH
+        dirs = np.array([round(np.cos(angle_rad),4),round(np.sin(angle_rad),4)])
+        #direction = np.where(dirs>0,1,-1)
+    
+        step = np.array([vW,vH])#*direction
+
+    elif angle_dir != 0.0 and angle_dir != 180.0:
+        step = np.array([0,stepH])
+    else: 
+        step = np.array([stepW,0])
+
+    return step
+
+
+    #return np.array([-round(np.cos(angle_rad),4),-round(np.sin(angle_rad),4)])*step,np.array([-round(np.cos(angle_rad),4),-round(np.sin(angle_rad),4)]) # the minus value is due to the fact that the fly has a fipped view of the scene
+
+def calculate_barwidth(angle,screen_virtual_dimension = np.array([80,40])):
+    
+    ''' by using an scaler and a dimension (virtual size of the screen), calculate what is the bar size required to fill the screen
+        not yet implemented for any angle in between chunks of 45 deg'''
+
+    if angle != 0.0 and angle != 180.0 and angle != 90.0 and angle != 270.0:
+       width = np.sqrt(np.sum((screen_virtual_dimension**2)))
+    elif  angle != 0.0 and angle != 180.0:
+       width = np.sqrt(np.sum((screen_virtual_dimension*np.array([0,1]))**2))
+    else:
+        width = np.sqrt(np.sum((screen_virtual_dimension*np.array([1,0]))**2))
+    return width
+
+def calculate_duration(angle,bar_size,speed,tau):
+    ''' calculates duration of an epoch for diferent angles 
+    different angles are treated differently because of the height-width distortion'''
+    
+    if angle != 90.0 and angle != 270.0 and angle != 0 and angle != 180:
+        durationx = ((80/speed) + tau) # 80 and 40 are the virtual dims of the screen
+        durationy = ((40/(speed*0.5)) + tau)
+        duration = np.sqrt((durationx**2 + durationy**2))
+    elif angle != 90.0 and angle != 270.0:
+        duration = ((bar_size/(speed)) + tau)
+    else:
+        duration = ((bar_size/(speed/2)) + tau)
+    
+    return duration
+
 
 def reflect_angle(angle):
     

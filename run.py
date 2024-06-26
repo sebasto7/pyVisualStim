@@ -28,15 +28,18 @@ def user(user_ID):
     file_path = gui.fileOpenDlg('./stimuli_collection')
     main(file_path[0])
 
-
+print(__name__)
 if __name__ == "__main__":
-    globals()[sys.argv[1]](sys.argv[2]) # Makes possible to run the user() function and input the unser_name variable in the command line
-    user()
+    # # For debugging option    
+    if __debug__:
+        user('seb')
 
-    # #For running from the terminal
+    # #For running from the terminal:
     # "In the terminal write: python run.py user <choose_user_name>"
     # #user("seb"), for example. 
-
+    else:
+        globals()[sys.argv[1]](sys.argv[2]) # Makes possible to run the user() function and input the unser_name variable in the command line
+        user()
     
 
     
